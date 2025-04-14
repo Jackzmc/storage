@@ -1,0 +1,24 @@
+<nav class="navbar mb-4 has-background-white-ter" aria-label="main navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item" href="/">
+            <h3 class="title is-3">storage-app</h3>
+        </a>
+        <button class="navbar-burger" aria-label="menu" aria-expanded="false">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </button>
+    </div>
+    <div class="navbar-start">
+        
+    </div>
+    <div class="navbar-end">
+        <div class="navbar-item">
+            Bell
+        </div>
+        <div class="navbar-item">
+            User
+        </div>
+    </div>
+</nav>
