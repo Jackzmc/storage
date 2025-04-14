@@ -1,0 +1,20 @@
+meta {
+  name: Move File
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://localhost:8080/api/library/:libraryId/files/move?from=&to=
+  body: none
+  auth: none
+}
+
+params:query {
+  from: 
+  to: 
+}
+
+params:path {
+  libraryId: dbabbf7d-9b63-487b-9908-57c2df11b2d2
+}

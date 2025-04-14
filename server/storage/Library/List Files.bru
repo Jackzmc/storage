@@ -1,0 +1,19 @@
+meta {
+  name: List Files
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:8080/api/library/:libraryId/files?path=
+  body: none
+  auth: none
+}
+
+params:query {
+  path: 
+}
+
+params:path {
+  libraryId: dbabbf7d-9b63-487b-9908-57c2df11b2d2
+}
