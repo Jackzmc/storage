@@ -10,6 +10,7 @@ use crate::managers::libraries::LibraryManager;
 use crate::managers::repos::RepoManager;
 use crate::objs::library::Library;
 use crate::util::{setup_logger, JsonErrorResponse, ResponseError};
+use routes::api;
 
 mod routes;
 mod util;
@@ -27,6 +28,7 @@ const MAX_UPLOAD_SIZE: ByteUnit = ByteUnit::Mebibyte(100_000);
 #[launch]
 async fn rocket() -> _ {
     setup_logger();
+    dotenvy::dotenv().ok();
     debug!("{}", std::env::var("DATABASE_URL").unwrap().as_str());
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -52,7 +54,9 @@ async fn rocket() -> _ {
         .manage(pool)
         .manage(repo_manager)
         .manage(libraries_manager)
-        .mount("/api", routes![routes::index, routes::get_library, routes::list_library_files, routes::get_library_file, routes::upload_library_file, routes::move_library_file])
+        .mount("/api", routes![
+            api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
+        ])
 }
 
 #[catch(404)]
