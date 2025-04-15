@@ -71,7 +71,7 @@ async fn rocket() -> _ {
             api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
         ])
         .mount("/", routes![
-            ui::user::index, ui::user::list_library_files, ui::user::get_library_file
+            ui::user::index, ui::user::redirect_list_library_files, ui::user::list_library_files, ui::user::get_library_file
         ])
         .attach(Template::custom(|engines| {
             let hb = &mut engines.handlebars;

@@ -2,8 +2,12 @@
 <div class="">
     <nav class="breadcrumb is-inline-block is-size-5 mb-0" aria-label="breadcrumbs">
         <ul>
-            <li><a class="has-text-black" href="#">{{ library.name }}</a></li>
-            <li class="is-active"><a class="has-text-black" href="#" aria-current="page">test</a></li>
+            <li><a class="has-text-black" href="/library/{{library.id}}/{{library.name}}/">{{ library.name }}</a></li>
+            {{#each path_segments}}
+                <li>
+                    <a class="has-text-black" href="/library/{{../library.id}}/{{../library.name}}/{{path}}" aria-current="page">  {{ segment }} </a>
+                    </li>
+            {{/each}}
             <div class="button is-small">
                 +
             </div>
@@ -61,10 +65,10 @@
                     </td>
                     <td class="filecell-label pl-4">
                         {{#if (eq type "folder")}}
-                        <a href="{{ path }}">{{ path }}/</a>
+                        <a href="{{../parent}}/{{ path }}">{{ path }}/</a>
                         {{/if}}
                         {{#if (eq type "file") }}
-                         <a target="_blank" href="/file/{{../library.id}}/{{ path }}">{{ path }}</a>
+                         <a target="_blank" href="/file/{{../library.id}}/{{../parent}}/{{ path }}">{{ path }}</a>
                         {{/if}}
                     </td>
                     <td>{{ bytes size }}</td>
