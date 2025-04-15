@@ -16,3 +16,4 @@ serde_json = "1.0.140"
 int-enum = "1.2.0"
 dotenvy = "0.15.7"
 rocket_dyn_templates = { version = "0.2.0", features = ["handlebars"] }
+humanize-bytes = "1.0.6"

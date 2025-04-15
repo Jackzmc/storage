@@ -3,7 +3,8 @@ use log::{debug, error, info, trace, warn};
 use rocket::{catch, launch, routes, Request, State};
 use rocket::data::ByteUnit;
 use rocket::fs::{relative, FileServer};
-use rocket_dyn_templates::handlebars::Handlebars;
+use rocket::futures::AsyncWriteExt;
+use rocket_dyn_templates::handlebars::{handlebars_helper, Context, Handlebars, Helper, HelperResult, Output, RenderContext};
 use rocket_dyn_templates::Template;
 use sqlx::{migrate, Pool, Postgres};
 use sqlx::postgres::PgPoolOptions;
@@ -24,6 +25,7 @@ mod user;
 mod models;
 mod managers;
 mod objs;
+mod helpers;
 
 pub type DB = Pool<Postgres>;
 
@@ -69,11 +71,13 @@ async fn rocket() -> _ {
             api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
         ])
         .mount("/", routes![
-            ui::user::index, ui::user::list_library_files
+            ui::user::index, ui::user::list_library_files, ui::user::get_library_file
         ])
         .attach(Template::custom(|engines| {
-            let _ = engines
-                .handlebars;
+            let hb = &mut engines.handlebars;
+
+            hb.register_helper("bytes", Box::new(helpers::bytes));
+            hb.register_helper("debug", Box::new(helpers::debug));
         }))
 
 }

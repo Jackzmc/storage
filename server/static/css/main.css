@@ -1,3 +1,7 @@
+:root {
+    --accent-color: rgb(231, 148, 162);
+}
+
 .sidebar {
 
 }
@@ -60,4 +64,10 @@ tr.file-list td input[type="checkbox"] {
     /* Opera */
     transform: scale(1.5);
     padding: 10px;
+}
+tr.file-list td.filecell-icon .fa-folder {
+    color: var(--accent-color);
+}
+tr.file-list td.filecell-label a {
+    color: var(--accent-color);
 }
