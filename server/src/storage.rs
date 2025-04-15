@@ -1,6 +1,8 @@
 mod local;
 mod s3;
 
+use std::fs::File;
+use std::io::BufReader;
 use std::path::PathBuf;
 use anyhow::{anyhow, Error};
 use int_enum::IntEnum;
@@ -68,4 +70,5 @@ pub trait StorageBackend {
 
     fn delete_file(&self, library_id: &str, rel_path: &PathBuf) -> Result<(), anyhow::Error>;
     fn move_file(&self, library_id: &str, rel_path: &PathBuf, new_rel_path: &PathBuf) -> Result<(), Error>;
+    fn get_read_stream(&self, library_id: &str, rel_path: &PathBuf,) -> Result<BufReader<File>, Error>;
 }

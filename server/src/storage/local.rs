@@ -1,4 +1,6 @@
 use std::env::join_paths;
+use std::fs::File;
+use std::io::BufReader;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Error};
@@ -34,6 +36,12 @@ fn get_path(folder_root: &PathBuf, library_id: &str, mut path: &Path) -> Result<
     Ok(path)
 }
 impl StorageBackend for LocalStorage {
+
+    fn get_read_stream(&self, library_id: &str, rel_path: &PathBuf,) -> Result<BufReader<File>, Error> {
+        let path = get_path(&self.folder_root, library_id, rel_path)?;
+        let file = File::open(path)?;
+        Ok(BufReader::new(file))
+    }
 
     fn write_file(&self, library_id: &str, rel_path: &PathBuf, contents: &[u8]) -> Result<(), Error> {
         let path = get_path(&self.folder_root, library_id, rel_path)?;

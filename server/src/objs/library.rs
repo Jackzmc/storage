@@ -1,5 +1,9 @@
+use std::fs::File;
+use std::io::BufReader;
 use std::path::PathBuf;
 use anyhow::Error;
+use rocket::response::stream::ReaderStream;
+use tokio::io::BufStream;
 use crate::managers::repos::RepoContainer;
 use crate::{models, DB};
 use crate::models::library::LibraryModel;
@@ -22,6 +26,11 @@ impl Library {
 
     pub fn model(&self) -> &LibraryModel {
         &self.model
+    }
+
+    pub async fn get_read_stream(&self, rel_path: &PathBuf) -> Result<BufReader<File>, anyhow::Error> {
+        let mut repo = self.repo.read().await;
+        repo.backend.get_read_stream(&self.model.id.to_string(), rel_path)
     }
 
     pub async fn write_file(&self, rel_path: &PathBuf, contents: &[u8]) -> Result<(), anyhow::Error> {

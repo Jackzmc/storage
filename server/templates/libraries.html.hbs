@@ -49,7 +49,7 @@
                             </span>
                         </a>
                     </td>
-                    <td class="">
+                    <td class="filecell-icon">
                         <span class="icon is-large">
                             {{#if (eq type "folder") }}
                                 <i class="fas fa-folder fa-xl"></i>
@@ -59,14 +59,16 @@
                             {{/if}}
                         </span>
                     </td>
-                    <td class="pl-4">
-                        <a href="{{ path }}">{{ path }}</a>
-                        {{#if (eq type "folder") }}
-                        /
+                    <td class="filecell-label pl-4">
+                        {{#if (eq type "folder")}}
+                        <a href="{{ path }}">{{ path }}/</a>
+                        {{/if}}
+                        {{#if (eq type "file") }}
+                         <a target="_blank" href="/file/{{../library.id}}/{{ path }}">{{ path }}</a>
                         {{/if}}
                     </td>
-                    <td></td>
-                    <td></td>
+                    <td>{{ bytes size }}</td>
+                    <td>{{ updated }}</td>
                     <td>Me</td>
                 </tr>
             {{/each}}
