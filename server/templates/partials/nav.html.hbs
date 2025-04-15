@@ -25,7 +25,7 @@
             </div>
         </div>
         <div class="navbar-item">
-            <a class="icon">
+            <a class="icon  has-text-black">
                 <i class="far fa-bell"></i>
                 <span class="ml-2" >0</span>
             </a>
@@ -37,16 +37,24 @@
             </a>
         
             <div class="navbar-dropdown">
-                <a class="navbar-item" href="/help/about">
-                    About
-                </a>
-                <a class="navbar-item">
-                    Contact
-                </a>
-                <hr class="navbar-divider">
-                <a class="navbar-item">
-                    Report an issue
-                </a>
+                <div class="dropdown-content">
+                    <div class="block px-4 py-4">
+                        <b>Quota</b>
+                        <progress class="progress" min=0 value=20 max=100 />
+                    </div>
+
+                    <a class="navbar-item" href="/help/about">
+                        About
+                    </a>
+                    <a class="navbar-item">
+                        Contact
+                    </a>
+                    <hr class="navbar-divider">
+                    <a class="navbar-item">
+                        Report an issue
+                    </a>
+                </div>
+     
             </div>
         </div>
     </div>
