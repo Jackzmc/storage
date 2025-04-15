@@ -1,9 +1,9 @@
 <aside class="sidebar pl-0 mb-0">
     <p class="sidebar-header">Workspace</p>
     <ul class="sidebar-list">
-        <li class="is-active"><button><Icon icon="akar-icons:copy"></Icon> Files</button></li>
-        <li><button><Icon icon="akar-icons:heart"></Icon> Favorites</button></li>
-        <li><button><Icon icon="akar-icons:clock"></Icon> Activities</button></li>
+        <li class="is-active"><button><i class="fa fa-file"></i> Files</button></li>
+        <li><button><i class="fas fa-heart"></i> Favorites</button></li>
+        <li><button><i class="fas fa-clock"></i> Activities</button></li>
     </ul>
     <p class="sidebar-header">Help</p>
     <ul class="sidebar-list">
@@ -11,11 +11,6 @@
         <li><button>About</button></li>
     </ul>
 </aside>
-
-
-<script lang="ts">
-    import Icon from "@iconify/svelte";
-</script>
 
 <style>
     .sidebar {
@@ -40,6 +35,9 @@
         /* margin-top: 4px; */
         width: 100%;
         text-align: left;
+    }
+    .sidebar i {
+        margin-left: 2px;
     }
     .sidebar-list li button:hover, .sidebar-list li button.is-active {
         background-color: lightgray;

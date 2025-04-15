@@ -1,0 +1,38 @@
+{{#> layouts/main }}
+    <div class="">
+    <h4 class="title is-4 is-inline">{{ library.name }} > Files</h4>
+    <div class="is-pulled-right is-inline-block">
+        <div class="buttons">
+            <div class="button is-small">
+                Display
+            </div>
+            <div class="button is-small">
+                Sort
+            </div>
+        </div>
+    </div>
+    <hr class="my-2">
+    <table class="table is-fullwidth">
+        <thead>
+            <tr>
+                <td>Name </td>
+                <td>Size </td>
+                <td>Last Updated </td>
+                <td>Owner </td>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each files }}
+                <tr>
+                    <td class="px-4 py-4">
+                        <a href="{{ file_name }}">{{ file_name }}</a>
+                    </td>
+                    <td></td>
+                    <td></td>
+                    <td>Me</td>
+                </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+{{/layouts/main}}

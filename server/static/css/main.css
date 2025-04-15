@@ -1,0 +1,29 @@
+.sidebar {
+
+}
+.sidebar-header {
+    color: hsl(0, 0%, 48%);
+    padding-left: 8px;
+}
+.sidebar-list {
+    /* margin-top: 2px; */
+    padding-top: 10px;
+    padding-left: 5px;
+    margin-bottom: 25px;
+}
+.sidebar-list li button {
+    padding-left: 8px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 5px;
+    border-radius: 2.5px;
+    /* margin-top: 4px; */
+    width: 100%;
+    text-align: left;
+}
+.sidebar i {
+    padding-right: 4px;
+}
+.sidebar-list li button:hover, .sidebar-list li button.is-active {
+    background-color: lightgray;
+}
