@@ -15,7 +15,7 @@ pub(crate) fn setup_logger() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::filter::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| format!("warn,rocket=trace,storage_server=trace").into()),
+                .unwrap_or_else(|_| format!("warn,rocket=warn,storage_server=trace").into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();

@@ -1,14 +1,17 @@
 use std::io::Cursor;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use rocket::{get, Response, State};
+use log::debug;
+use rocket::{get, uri, Response, State};
 use rocket::fs::NamedFile;
 use rocket::http::{ContentType, Header};
 use rocket::http::hyper::body::Buf;
-use rocket::response::{status, Responder};
+use rocket::response::{status, Redirect, Responder};
 use rocket::response::stream::ByteStream;
-use rocket::serde::json::Json;
+use rocket::serde::json::{json, Json};
 use rocket_dyn_templates::{context, Template};
+use serde::Serialize;
+use serde_json::Value;
 use tokio::sync::Mutex;
 use crate::managers::libraries::LibraryManager;
 use crate::util::{JsonErrorResponse, ResponseError};
@@ -18,22 +21,59 @@ pub async fn index() -> Template {
     Template::render("index", context! { test: "value" })
 }
 
-#[get("/libraries/<library_id>/<_>/<path..>")]
+#[get("/library/<library_id>")]
+pub async fn redirect_list_library_files(libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str)
+  -> Result<Redirect, ResponseError>
+{
+    let libs = libraries.lock().await;
+    let library = libs.get(library_id).await?;
+    // let redirect_to = format!("/library/{}/{}/", library_id, library.model().name);
+    // debug!("{}", redirect_to);
+    Ok(Redirect::to(uri!(list_library_files(library_id, library.model().name, ""))))
+    // Ok(Redirect::to(redirect_to))
+}
+
+
+#[get("/library/<library_id>/<_>/<path..>")]
 pub async fn list_library_files(libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: PathBuf)
     -> Result<Template, ResponseError>
 {
     let libs = libraries.lock().await;
     let library = libs.get(library_id).await?;
-    let files = library.list_files(&PathBuf::from(path)).await
+    let files = library.list_files(&PathBuf::from(&path)).await
         .map_err(|e| ResponseError::InternalServerError(JsonErrorResponse {
             code: "STORAGE_ERROR".to_string(),
             message: e.to_string(),
         }))?;
 
+    // TODO:
+    // parent
+    let parent = path.clone();
+    let mut seg_path = PathBuf::new();
+    let segments: Vec<PathSegmentPiece> = path.iter()
+        .map(|segment| {
+            seg_path = seg_path.join(segment);
+            PathSegmentPiece {
+                path: seg_path.clone(),
+                segment: segment.to_string_lossy().into_owned(),
+            }
+        })
+        .collect();
+    debug!("parent={:?}", parent);
+    debug!("segments={:?}", segments);
+
     Ok(Template::render("libraries", context! {
         library: library.model(),
-        files: files
+        files: files,
+        parent,
+        path_segments: segments
     }))
+}
+
+#[derive(Debug, Serialize)]
+struct PathSegmentPiece {
+    pub path: PathBuf,
+    pub segment: String
 }
 
 #[derive(Responder)]
@@ -61,15 +101,9 @@ pub async fn get_library_file<'a>(libraries: &State<Arc<Mutex<LibraryManager>>>,
             }))
         }
         Some(contents) => {
-            // TODO: headers?
             let file_name = path.file_name().unwrap().to_string_lossy();
             let ext = path.extension().unwrap().to_string_lossy();
             let file_type = ContentType::from_extension(&ext);
-            // let res = Response::build()
-            //     .header(file_type.unwrap_or(ContentType::Binary))
-            //     .header(Header::new("Content-Disposition", format!("attachment; filename=\"{}\"", file_name)))
-            //     .sized_body(contents.len(), Cursor::new(contents))
-            //     .finalize();
             Ok(FileAttachment {
                 content: contents,
                 content_type: file_type.unwrap_or(ContentType::Binary),
