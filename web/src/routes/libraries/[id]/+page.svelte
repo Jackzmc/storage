@@ -1,0 +1,50 @@
+<div class="">
+    <h4 class="title is-4 is-inline">{ library.name } > Files</h4>
+    <div class="is-pulled-right is-inline-block">
+        <div class="buttons">
+            <div class="button is-small">
+                Display
+            </div>
+            <div class="button is-small">
+                Sort
+            </div>
+        </div>
+    </div>
+    <hr class="my-2">
+    <table class="table is-fullwidth">
+        <thead>
+            <tr>
+                <td>Name </td>
+                <td>Size </td>
+                <td>Last Updated </td>
+                <td>Owner </td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="px-4 py-4">
+                    <a href="/libraries/dbabbf7d-9b63-487b-9908-57c2df11b2d2">My Library</a>
+                </td>
+                <td></td>
+                <td></td>
+                <td>Me</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<FileList />
+
+<script lang="ts">
+import FileList from '$lib/components/filelist.svelte'
+
+let { data } = $props();
+
+let library = {
+    id: "",
+    name: "Unknown"
+}
+
+async function fetchLibrary() {
+    const response = fetch(`/api/libraries/${data.id}`)
+}
+</script>
