@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="/favicon.png" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>storage-app</title>
+        <!-- TODO: use static -->
+        <link
+                rel="stylesheet"
+                href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css"
+        >
+    </head>
+	<body>
+        {{> partials/nav }}
+        <div class="mx-5 columns">
+            <div class="column pl-0 sidebar-column">
+                {{> partials/sidebar }}
+            </div>
+            <div class="column is-10">
+                {{> @partial-block }}
+            </div>
+        </div>
+	</body>
+</html>
