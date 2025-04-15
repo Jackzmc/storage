@@ -1,18 +1,18 @@
 <aside class="sidebar pl-0 mb-0">
     <p class="sidebar-header">Workspace</p>
     <ul class="sidebar-list">
-        <li class="is-active"><button><i class="fa fa-file"></i> Files</button></li>
-        <li><button><i class="fas fa-heart"></i> Favorites</button></li>
-        <li><button><i class="fas fa-clock"></i> Activities</button></li>
+        <li  class="is-active"><a href="#"><i class="fa fa-file"></i> Files</a></li>
+        <li><a href="#"><i class="fas fa-heart"></i> Favorites</a></li>
+        <li><a href="#"><i class="fas fa-clock"></i> Activities</a></li>
     </ul>
     <p class="sidebar-header">Help</p>
     <ul class="sidebar-list">
-        <li><button>Help</button></li>
-        <li><button>About</button></li>
+        <li><a href="#">Help</a></li>
+        <li><a href="#">About</a></li>
     </ul>
 </aside>
 
-<style>
+{{!-- <style>
     .sidebar {
 
     }
@@ -20,13 +20,26 @@
         color: hsl(0, 0%, 48%);
         padding-left: 8px;
     }
-    .sidebar-list {
+    ul.sidebar-list {
         /* margin-top: 2px; */
         padding-top: 10px;
         padding-left: 5px;
         margin-bottom: 25px;
+        li a {
+            padding-left: 8px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            padding-right: 5px;
+            border-radius: 2.5px;
+            /* margin-top: 4px; */
+            width: 100%;
+            text-align: left;
+        }
+        li a:hover, li a.is-active {
+            background-color: lightgray;
+        }
     }
-    .sidebar-list li button {
+    ul.sidebar-list li a {
         padding-left: 8px;
         padding-top: 10px;
         padding-bottom: 10px;
@@ -36,10 +49,11 @@
         width: 100%;
         text-align: left;
     }
+      ul.sidebar-list li a:hover, ul.sidebar-list li a.is-active {
+            background-color: lightgray;
+    }
     .sidebar i {
         margin-left: 2px;
     }
-    .sidebar-list li button:hover, .sidebar-list li button.is-active {
-        background-color: lightgray;
-    }
-</style>
+  
+</style> --}}

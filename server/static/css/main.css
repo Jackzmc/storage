@@ -5,27 +5,32 @@
     color: hsl(0, 0%, 48%);
     padding-left: 8px;
 }
-.sidebar-list {
+ul.sidebar-list {
     /* margin-top: 2px; */
     padding-top: 10px;
     padding-left: 5px;
     margin-bottom: 25px;
+    width: 100%;
 }
-.sidebar-list li button {
-    padding-left: 8px;
+ul.sidebar-list li {
+    cursor: pointer;
     padding-top: 10px;
     padding-bottom: 10px;
     padding-right: 5px;
     border-radius: 2.5px;
-    /* margin-top: 4px; */
-    width: 100%;
+}
+ul.sidebar-list li a {
+    padding-left: 8px;
     text-align: left;
+    color: black;
+    text-decoration: none;
+}
+ul.sidebar-list li:hover,
+ul.sidebar-list li.is-active {
+    background-color: rgb(235, 235, 235);
 }
 .sidebar i {
     padding-right: 4px;
-}
-.sidebar-list li button:hover, .sidebar-list li button.is-active {
-    background-color: lightgray;
 }
 
 .sidebar-column {
