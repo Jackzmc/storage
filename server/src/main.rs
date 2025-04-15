@@ -2,6 +2,7 @@ use std::sync::Arc;
 use log::debug;
 use rocket::{catch, launch, routes, Request, State};
 use rocket::data::ByteUnit;
+use rocket_dyn_templates::Template;
 use sqlx::{migrate, Pool, Postgres};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::types::Json;
@@ -11,6 +12,7 @@ use crate::managers::repos::RepoManager;
 use crate::objs::library::Library;
 use crate::util::{setup_logger, JsonErrorResponse, ResponseError};
 use routes::api;
+use crate::routes::ui;
 
 mod routes;
 mod util;
@@ -29,7 +31,7 @@ const MAX_UPLOAD_SIZE: ByteUnit = ByteUnit::Mebibyte(100_000);
 async fn rocket() -> _ {
     setup_logger();
     dotenvy::dotenv().ok();
-    debug!("{}", std::env::var("DATABASE_URL").unwrap().as_str());
+
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(std::env::var("DATABASE_URL").unwrap().as_str())
@@ -54,9 +56,14 @@ async fn rocket() -> _ {
         .manage(pool)
         .manage(repo_manager)
         .manage(libraries_manager)
+        .mount("/", routes![
+            ui::user::index
+        ])
         .mount("/api", routes![
             api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
         ])
+        .attach(Template::fairing())
+
 }
 
 #[catch(404)]

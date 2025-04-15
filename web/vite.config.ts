@@ -17,6 +17,15 @@ export default defineConfig({
 			compiler: 'svelte',
 		})
 	],
+	server: {
+		proxy: {
+			'^/api': {
+				target: "http://localhost:8080",
+				changeOrigin: true,
+				ws: true
+			}
+		}
+	},
 	test: {
 		workspace: [
 			{

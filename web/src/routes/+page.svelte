@@ -1,5 +1,5 @@
 <div class="">
-    <h4 class="title is-4 is-inline">My Files</h4>
+    <h4 class="title is-4 is-inline">Libraries</h4>
     <div class="is-pulled-right is-inline-block">
         <div class="buttons">
             <div class="button is-small">
@@ -20,6 +20,16 @@
                 <td>Owner </td>
             </tr>
         </thead>
+        <tbody>
+            <tr>
+                <td class="px-4 py-4">
+                    <a href="/libraries/dbabbf7d-9b63-487b-9908-57c2df11b2d2">My Library</a>
+                </td>
+                <td></td>
+                <td></td>
+                <td>Me</td>
+            </tr>
+        </tbody>
     </table>
 </div>
 <FileList />

@@ -19,3 +19,4 @@ use crate::storage::FileEntry;
 use crate::util::{JsonErrorResponse, ResponseError};
 
 pub mod api;
+pub mod ui;
