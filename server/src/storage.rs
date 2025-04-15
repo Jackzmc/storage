@@ -17,11 +17,38 @@ pub enum StorageBackendMap {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct FileEntry {
-    pub file_name: String,
-    // last_modified:
-    pub file_size: u64,
+#[serde(rename_all = "lowercase")]
+pub enum FileType {
+    File,
+    Folder,
+    Symlink,
+    Other
 }
+
+impl From<std::fs::FileType> for FileType {
+    fn from(value: std::fs::FileType) -> Self {
+        if value.is_file() {
+            FileType::File
+        } else if value.is_dir() {
+            FileType::Folder
+        } else if value.is_symlink() {
+            FileType::Symlink
+        } else {
+            FileType::Other
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FileEntry {
+    pub path: String,
+    // last_modified:
+    pub size: u64,
+    #[serde(rename="type")]
+    pub _type: FileType,
+}
+
+
 
 pub fn get_backend(storage_type: &str, settings: &JsonValue) -> Result<Option<Box<dyn StorageBackend + Send + Sync>>, anyhow::Error> {
     Ok(match storage_type {

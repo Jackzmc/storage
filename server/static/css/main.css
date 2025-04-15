@@ -27,3 +27,32 @@
 .sidebar-list li button:hover, .sidebar-list li button.is-active {
     background-color: lightgray;
 }
+
+.sidebar-column {
+    height: 100%;
+}
+
+html,body {
+    height: 100%;
+}
+.sidebar-column {
+    border-right: 1px solid lightgray;
+}
+tr.file-list td {
+    vertical-align: middle;
+    padding: 0;
+}
+
+tr.file-list td input[type="checkbox"] {
+    margin: 20px; /** this weirdly makes it look good TODO: fix */
+    -ms-transform: scale(1.5);
+    /* IE */
+    -moz-transform: scale(1.5);
+    /* FF */
+    -webkit-transform: scale(1.5);
+    /* Safari and Chrome */
+    -o-transform: scale(1.5);
+    /* Opera */
+    transform: scale(1.5);
+    padding: 10px;
+}
