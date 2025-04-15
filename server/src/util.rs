@@ -1,8 +1,11 @@
+use std::fs;
 use std::io::Cursor;
 use rocket::http::{ContentType, Status};
 use rocket::{response, Request, Response};
+use rocket::fs::relative;
 use rocket::response::Responder;
 use rocket::serde::Serialize;
+use rocket_dyn_templates::handlebars::Handlebars;
 use sqlx::Error;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -12,11 +15,31 @@ pub(crate) fn setup_logger() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::filter::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| format!("warn,rocket=trace,storage-server=trace").into()),
+                .unwrap_or_else(|_| format!("warn,rocket=trace,storage_server=trace").into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
 }
+
+// pub(crate) fn setup_template_engine() -> Handlebars<'static> {
+//     let mut hb = Handlebars::new();
+//     #[cfg(debug_assertions)]
+//     hb.set_dev_mode(true);
+//
+//     let templates = fs::read_dir(relative!("templates")).unwrap();
+//     let mut ok = true;
+//     for file in templates {
+//         let file = file.unwrap();
+//         if let Err(e) = hb.register_template_file(file.path().to_str().unwrap(), ) {
+//             error!(template, path = %path.display(),
+//                     "failed to register Handlebars template: {e}");
+//
+//             ok = false;
+//         }
+//     }
+//
+// hb
+// }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct JsonErrorResponse {

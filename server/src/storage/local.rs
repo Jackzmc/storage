@@ -19,7 +19,10 @@ impl LocalStorage {
     }
 }
 
-fn get_path(folder_root: &PathBuf, library_id: &str, path: &PathBuf) -> Result<PathBuf, anyhow::Error> {
+fn get_path(folder_root: &PathBuf, library_id: &str, mut path: &Path) -> Result<PathBuf, anyhow::Error> {
+    if path.starts_with("/") {
+        path = path.strip_prefix("/")?
+    }
     let path = folder_root.join(library_id).join(path);
     // Prevent path traversal
     debug!("root={:?}", folder_root);
@@ -51,9 +54,12 @@ impl StorageBackend for LocalStorage {
             .map(|entry| entry.unwrap())
             .map(|entry| {
                 let meta = entry.metadata().unwrap();
+                let file_type = meta.file_type().into();
+                // TODO: filter out 'other'
                 FileEntry {
-                    file_name: entry.file_name().into_string().unwrap(),
-                    file_size: meta.size()
+                    _type: file_type,
+                    path: entry.file_name().into_string().unwrap(),
+                    size: meta.size()
                 }
             })
             .collect())

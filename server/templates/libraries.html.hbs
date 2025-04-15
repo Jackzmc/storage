@@ -1,6 +1,14 @@
 {{#> layouts/main }}
-    <div class="">
-    <h4 class="title is-4 is-inline">{{ library.name }} > Files</h4>
+<div class="">
+    <nav class="breadcrumb is-inline-block is-size-5 mb-0" aria-label="breadcrumbs">
+        <ul>
+            <li><a class="has-text-black" href="#">{{ library.name }}</a></li>
+            <li class="is-active"><a class="has-text-black" href="#" aria-current="page">test</a></li>
+            <div class="button is-small">
+                +
+            </div>
+        </ul>
+    </nav>
     <div class="is-pulled-right is-inline-block">
         <div class="buttons">
             <div class="button is-small">
@@ -9,12 +17,21 @@
             <div class="button is-small">
                 Sort
             </div>
+            <div class="button is-small">
+                Info
+            </div>
+            <div class="button is-small">
+                ...
+            </div>
         </div>
     </div>
     <hr class="my-2">
     <table class="table is-fullwidth">
         <thead>
-            <tr>
+            <tr class="file-list">
+                <td style="width:0"><input type="checkbox" /></td>
+                <td style="width:0"></td>
+                <td style="width:0"></td>
                 <td>Name </td>
                 <td>Size </td>
                 <td>Last Updated </td>
@@ -23,9 +40,30 @@
         </thead>
         <tbody>
             {{#each files }}
-                <tr>
-                    <td class="px-4 py-4">
-                        <a href="{{ file_name }}">{{ file_name }}</a>
+                <tr class="file-list">
+                    <td><input type="checkbox" /></td>
+                    <td>
+                        <a class="has-text-black">
+                            <span class="icon is-large">
+                                <i class="fas fa-star fa-xl"></i>
+                            </span>
+                        </a>
+                    </td>
+                    <td class="">
+                        <span class="icon is-large">
+                            {{#if (eq type "folder") }}
+                                <i class="fas fa-folder fa-xl"></i>
+                            {{/if}}
+                            {{#if (eq type "file") }}
+                                <i class="fas fa-file fa-xl"></i>
+                            {{/if}}
+                        </span>
+                    </td>
+                    <td class="pl-4">
+                        <a href="{{ path }}">{{ path }}</a>
+                        {{#if (eq type "folder") }}
+                        /
+                        {{/if}}
                     </td>
                     <td></td>
                     <td></td>
