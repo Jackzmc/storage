@@ -71,6 +71,7 @@ async fn rocket() -> _ {
             api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
         ])
         .mount("/", routes![
+            ui::help::about,
             ui::user::index, ui::user::redirect_list_library_files, ui::user::list_library_files, ui::user::get_library_file
         ])
         .attach(Template::custom(|engines| {
@@ -78,6 +79,8 @@ async fn rocket() -> _ {
 
             hb.register_helper("bytes", Box::new(helpers::bytes));
             hb.register_helper("debug", Box::new(helpers::debug));
+            hb.register_helper("is-active", Box::new(helpers::is_active));
+            hb.register_helper("is-active-exact", Box::new(helpers::is_active));
         }))
 
 }
