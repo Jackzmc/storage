@@ -45,7 +45,12 @@ pub async fn list_library_files(route: &Route, libraries: &State<Arc<Mutex<Libra
 
     // TODO:
     // parent
-    let parent = path.clone();
+    let mut parent = path.to_string_lossy();
+    if parent == "/" {
+        parent = "".into();
+    } else if parent != "" {
+        parent = format!("{}/", parent).into();
+    }
     let mut seg_path = PathBuf::new();
     let segments: Vec<PathSegmentPiece> = path.iter()
         .map(|segment| {
