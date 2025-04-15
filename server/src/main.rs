@@ -1,15 +1,21 @@
 use std::sync::Arc;
+use std::time::Duration;
 use log::{debug, error, info, trace, warn};
 use rocket::{catch, launch, routes, Request, State};
 use rocket::data::ByteUnit;
 use rocket::fs::{relative, FileServer};
 use rocket::futures::AsyncWriteExt;
+use rocket::http::private::cookie::CookieBuilder;
+use rocket::serde::Serialize;
 use rocket_dyn_templates::handlebars::{handlebars_helper, Context, Handlebars, Helper, HelperResult, Output, RenderContext};
 use rocket_dyn_templates::Template;
+use rocket_session_store::memory::MemoryStore;
+use rocket_session_store::SessionStore;
 use sqlx::{migrate, Pool, Postgres};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::types::Json;
 use tokio::sync::Mutex;
+use tracing_subscriber::fmt::writer::MakeWriterExt;
 use crate::managers::libraries::LibraryManager;
 use crate::managers::repos::RepoManager;
 use crate::objs::library::Library;
@@ -30,6 +36,11 @@ mod helpers;
 pub type DB = Pool<Postgres>;
 
 const MAX_UPLOAD_SIZE: ByteUnit = ByteUnit::Mebibyte(100_000);
+
+#[derive(Clone, Debug, Serialize)]
+struct SessionData {
+    user_name: String
+}
 
 #[launch]
 async fn rocket() -> _ {
@@ -62,18 +73,26 @@ async fn rocket() -> _ {
         Arc::new(Mutex::new(manager))
     };
 
+    let memory_store: MemoryStore::<SessionData> = MemoryStore::default();
+    let store: SessionStore<SessionData> = SessionStore {
+        store: Box::new(memory_store),
+        name: "storage-session".into(),
+        duration: Duration::from_secs(3600 * 24 * 14),
+        // The cookie builder is used to set the cookie's path and other options.
+        // Name and value don't matter, they'll be overridden on each request.
+        cookie_builder: CookieBuilder::new("", "")
+            // Most web apps will want to use "/", but if your app is served from
+            // `example.com/myapp/` for example you may want to use "/myapp/" (note the trailing
+            // slash which prevents the cookie from being sent for `example.com/myapp2/`).
+            .path("/")
+    };
+
     rocket::build()
         .manage(pool)
         .manage(repo_manager)
         .manage(libraries_manager)
-        .mount("/static", FileServer::from(relative!("static")))
-        .mount("/api/library", routes![
-            api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
-        ])
-        .mount("/", routes![
-            ui::help::about,
-            ui::user::index, ui::user::redirect_list_library_files, ui::user::list_library_files, ui::user::get_library_file
-        ])
+
+        .attach(store.fairing())
         .attach(Template::custom(|engines| {
             let hb = &mut engines.handlebars;
 
@@ -83,6 +102,15 @@ async fn rocket() -> _ {
             hb.register_helper("is-active-exact", Box::new(helpers::is_active));
         }))
 
+        .mount("/static", FileServer::from(relative!("static")))
+        .mount("/api/library", routes![
+            api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
+        ])
+        .mount("/", routes![
+            ui::help::about,
+            ui::user::index, ui::user::redirect_list_library_files, ui::user::list_library_files, ui::user::get_library_file,
+            ui::help::test_get, ui::help::test_set
+        ])
 }
 
 #[catch(404)]
