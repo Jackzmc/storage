@@ -2,7 +2,7 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use log::debug;
-use rocket::{get, uri, Response, State};
+use rocket::{get, uri, Response, Route, State};
 use rocket::fs::NamedFile;
 use rocket::http::{ContentType, Header};
 use rocket::http::hyper::body::Buf;
@@ -17,8 +17,8 @@ use crate::managers::libraries::LibraryManager;
 use crate::util::{JsonErrorResponse, ResponseError};
 
 #[get("/")]
-pub async fn index() -> Template {
-    Template::render("index", context! { test: "value" })
+pub async fn index(route: &Route) -> Template {
+    Template::render("index", context! { route: route.uri.path(), test: "value" })
 }
 
 #[get("/library/<library_id>")]
@@ -27,15 +27,12 @@ pub async fn redirect_list_library_files(libraries: &State<Arc<Mutex<LibraryMana
 {
     let libs = libraries.lock().await;
     let library = libs.get(library_id).await?;
-    // let redirect_to = format!("/library/{}/{}/", library_id, library.model().name);
-    // debug!("{}", redirect_to);
     Ok(Redirect::to(uri!(list_library_files(library_id, library.model().name, ""))))
-    // Ok(Redirect::to(redirect_to))
 }
 
 
 #[get("/library/<library_id>/<_>/<path..>")]
-pub async fn list_library_files(libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: PathBuf)
+pub async fn list_library_files(route: &Route, libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: PathBuf)
     -> Result<Template, ResponseError>
 {
     let libs = libraries.lock().await;
@@ -63,6 +60,7 @@ pub async fn list_library_files(libraries: &State<Arc<Mutex<LibraryManager>>>, l
     debug!("segments={:?}", segments);
 
     Ok(Template::render("libraries", context! {
+        route: route.uri.path(),
         library: library.model(),
         files: files,
         parent,

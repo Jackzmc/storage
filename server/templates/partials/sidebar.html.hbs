@@ -1,13 +1,13 @@
 <aside class="sidebar pl-0 mb-0">
     <p class="sidebar-header">Workspace</p>
     <ul class="sidebar-list">
-        <li  class="is-active"><a href="#"><i class="fa fa-file"></i> Files</a></li>
-        <li><a href="#"><i class="fas fa-heart"></i> Favorites</a></li>
-        <li><a href="#"><i class="fas fa-clock"></i> Activities</a></li>
+        <li class="{{is-active-exact route '/'}} {{is-active route '/library'}}"><a href="/"><i class="fa fa-file"></i> Files</a></li>
+        <li class="{{is-active route '/favorites'}}"><a href="/favorites"><i class="fas fa-heart"></i> Favorites</a></li>
+        <li class="{{is-active route '/activity'}}"><a href="/activity"><i class="fas fa-clock"></i> Activities</a></li>
     </ul>
     <p class="sidebar-header">Help</p>
     <ul class="sidebar-list">
-        <li><a href="#">Help</a></li>
-        <li><a href="#">About</a></li>
+        <li class="{{is-active-exact route '/help'}}"><a href="/help">Help</a></li>
+        <li class="{{is-active route '/help/about'}}"><a href="/help/about">About</a></li>
     </ul>
 </aside>
