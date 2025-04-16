@@ -1,5 +1,7 @@
 # storage-app
 
+(needs a better name)
+
 ## Overview
 
 This project takes heavily inspiration from [Seafile](https://www.seafile.com/) in its functionality and UI design. File hosting service with performance, ease of use, and being lightweight. 
