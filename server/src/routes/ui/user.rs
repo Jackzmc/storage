@@ -20,12 +20,12 @@ use crate::util::{JsonErrorResponse, ResponseError};
 
 
 #[get("/")]
-pub async fn index(route: &Route) -> Template {
-    Template::render("index", context! { user: true, route: route.uri.path(), test: "value" })
+pub async fn index(user: AuthUser, route: &Route) -> Template {
+    Template::render("index", context! { session: user.session, route: route.uri.path(), test: "value" })
 }
 
 #[get("/library/<library_id>")]
-pub async fn redirect_list_library_files(libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str)
+pub async fn redirect_list_library_files(user: AuthUser, libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str)
   -> Result<Redirect, ResponseError>
 {
     let libs = libraries.lock().await;
@@ -67,7 +67,7 @@ pub async fn list_library_files(user: AuthUser, route: &Route, libraries: &State
     debug!("parent={:?}", parent);
     debug!("segments={:?}", segments);
     Ok(Template::render("libraries", context! {
-        user: user.user,
+        session: user.session,
         route: route.uri.path(),
         library: library.model(),
         files: files,
@@ -92,7 +92,7 @@ struct FileAttachment {
 }
 
 #[get("/file/<library_id>/<path..>")]
-pub async fn get_library_file<'a>(libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: PathBuf)
+pub async fn get_library_file<'a>(user: AuthUser, libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: PathBuf)
     -> Result<FileAttachment, ResponseError>
 {
     let libs = libraries.lock().await;

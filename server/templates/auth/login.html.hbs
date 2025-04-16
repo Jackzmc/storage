@@ -4,7 +4,7 @@
         <h1 class="title is-1 has-text-centered">storage-app</h1>
         <div class="box is-radiusless">
             <h4 class="title is-4 has-text-centered">Login</h4>
-            {{#unless (eq (len form.form_errors) 0)  }}
+            {{#unless (eq (len form.form_errors) 0) }}
             <div class="notification is-danger is-light">
                 <b>Login failed with errors:</b>
                 <ul>
@@ -14,7 +14,12 @@
                 </ul>
             </div>
             {{/unless}}
-            <form method="post" action="/auth/login">
+            {{#if logged_out }}
+                <div class="notification is-success is-light">
+                    You have been logged out successfully.
+                </div>
+            {{/if}}
+            <form method="post" action="/auth/login?return_to={{return_to}}">
                 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
                 <div class="field">
                     <label class="label">Username / Email</label>

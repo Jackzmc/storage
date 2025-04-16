@@ -7,6 +7,7 @@ use rocket::data::ByteUnit;
 use rocket::fs::{relative, FileServer};
 use rocket::futures::AsyncWriteExt;
 use rocket::http::private::cookie::CookieBuilder;
+use rocket::http::uri::Uri;
 use rocket::response::Redirect;
 use rocket::serde::Serialize;
 use rocket_dyn_templates::handlebars::{handlebars_helper, Context, Handlebars, Helper, HelperResult, Output, RenderContext};
@@ -123,7 +124,7 @@ async fn rocket() -> _ {
             api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
         ])
         .mount("/auth", routes![
-            ui::auth::login, ui::auth::login_handler, ui::auth::register, ui::auth::register_handler,
+            ui::auth::logout, ui::auth::login, ui::auth::login_handler, ui::auth::register, ui::auth::register_handler,
         ])
         .mount("/", routes![
             ui::help::about,
@@ -141,7 +142,7 @@ async fn rocket() -> _ {
 #[catch(401)]
 pub fn not_authorized(req: &Request) -> Redirect {
     // uri!(ui::auth::login) doesn't work, it redirects to /login instead
-    Redirect::to(format!("/auth/login?path={}", req.uri()))
+    Redirect::to(format!("/auth/login?return_to={}", req.uri().path().percent_encode()))
 }
 
 #[catch(404)]
