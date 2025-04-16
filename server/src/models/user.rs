@@ -1,13 +1,17 @@
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 use bcrypt::BcryptError;
 use chrono::NaiveDateTime;
+use rocket::form::Context;
 use rocket::http::Status;
-use rocket::Request;
+use rocket::{form, Request};
+use rocket::form::error::Entity;
 use rocket::response::Responder;
 use rocket::serde::Serialize;
 use rocket::serde::uuid::Uuid;
 use sqlx::{query_as, FromRow};
 use crate::consts::ENCRYPTION_ROUNDS;
-use crate::DB;
+use crate::{LoginSessionData, SessionData, DB};
 use crate::models::repo::RepoModel;
 use crate::util::JsonErrorResponse;
 
@@ -36,6 +40,16 @@ pub enum UserAuthError {
     UserAlreadyExists,
     PasswordInvalid,
     EncryptionError(BcryptError),
+}
+
+impl Display for UserAuthError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.get_err_code(), self.get_err_msg())
+    }
+}
+
+impl Error for UserAuthError {
+
 }
 impl UserAuthError {
     fn get_err_code(&self) -> String {
@@ -82,7 +96,23 @@ pub async fn get_user(pool: &DB, user_id: &str) -> Result<Option<UserModel>, any
         .fetch_optional(pool)
         .await.map_err(anyhow::Error::from)
 }
+/// Validates user login form, returning Some on success or None (with ctx containing errors) on failure
+pub async fn validate_user_form(ctx: &mut Context<'_>, pool: &DB) -> Option<UserModel> {
+    let username = ctx.field_value("username").unwrap();
+    let password = ctx.field_value("password").unwrap(); // TODO: no unwrap
+    match validate_user(pool, username, password).await {
+        Ok(u) => Some(u),
+        Err(UserAuthError::PasswordInvalid | UserAuthError::UserNotFound) => {
+            ctx.push_error(form::Error::validation("Username or password is incorrect").with_entity(Entity::Form));
+            None
+        },
+        Err(e) => {
+            ctx.push_error(form::Error::custom(e));
+            None
+        }
+    }
 
+}
 pub async fn validate_user(pool: &DB, email_or_usrname: &str, password: &str) -> Result<UserModel, UserAuthError> {
     let user = query_as!(UserModelWithPassword,
         "select id, username, password, created_at, email, name  from storage.users where email = $1 OR username = $1", email_or_usrname

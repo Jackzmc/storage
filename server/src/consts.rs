@@ -5,7 +5,7 @@ use rocket::data::ByteUnit;
 pub const MAX_UPLOAD_SIZE: ByteUnit = ByteUnit::Mebibyte(100_000);
 
 /// The number of encryption rounds
-pub const ENCRYPTION_ROUNDS: u32 = 20;
+pub const ENCRYPTION_ROUNDS: u32 = 12;
 
 pub const SESSION_LIFETIME_SECONDS: u64 = 3600 * 24 * 14; // 14 days
 
