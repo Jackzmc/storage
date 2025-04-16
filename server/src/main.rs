@@ -2,14 +2,15 @@ use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use log::{debug, error, info, trace, warn};
-use rocket::{catch, launch, routes, Request, State};
+use rocket::{catch, catchers, launch, routes, uri, Request, Route, State};
 use rocket::data::ByteUnit;
 use rocket::fs::{relative, FileServer};
 use rocket::futures::AsyncWriteExt;
 use rocket::http::private::cookie::CookieBuilder;
+use rocket::response::Redirect;
 use rocket::serde::Serialize;
 use rocket_dyn_templates::handlebars::{handlebars_helper, Context, Handlebars, Helper, HelperResult, Output, RenderContext};
-use rocket_dyn_templates::Template;
+use rocket_dyn_templates::{context, Template};
 use rocket_session_store::memory::MemoryStore;
 use rocket_session_store::SessionStore;
 use sqlx::{migrate, Pool, Postgres};
@@ -36,6 +37,7 @@ mod managers;
 mod objs;
 mod helpers;
 mod consts;
+mod guards;
 
 pub type DB = Pool<Postgres>;
 
@@ -128,10 +130,29 @@ async fn rocket() -> _ {
             ui::user::index, ui::user::redirect_list_library_files, ui::user::list_library_files, ui::user::get_library_file,
             ui::help::test_get
         ])
+        .register("/api", catchers![
+            not_found_api,
+        ])
+        .register("/", catchers![
+            not_found, not_authorized
+        ])
+}
+
+#[catch(401)]
+pub fn not_authorized(req: &Request) -> Redirect {
+    // uri!(ui::auth::login) doesn't work, it redirects to /login instead
+    Redirect::to(format!("/auth/login?path={}", req.uri()))
 }
 
 #[catch(404)]
-fn not_found(req: &Request) -> ResponseError {
+fn not_found(req: &Request) -> Template {
+    Template::render("errors/404", context! {
+        path: req.uri()
+    })
+}
+
+#[catch(404)]
+fn not_found_api(req: &Request) -> ResponseError {
     ResponseError::NotFound(
         JsonErrorResponse {
             code: "ROUTE_NOT_FOUND".to_string(),

@@ -4,8 +4,7 @@
         <h1 class="title is-1 has-text-centered">storage-app</h1>
         <div class="box is-radiusless">
             <h4 class="title is-4 has-text-centered">Login</h4>
-            {{debug this}}
-            {{#if (len form.form_errors) includeZero=true  }}
+            {{#unless (eq (len form.form_errors) 0)  }}
             <div class="notification is-danger is-light">
                 <b>Login failed with errors:</b>
                 <ul>
@@ -14,7 +13,7 @@
                     {{/each}}
                 </ul>
             </div>
-            {{/if}}
+            {{/unless}}
             <form method="post" action="/auth/login">
                 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
                 <div class="field">

@@ -2,7 +2,7 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use log::debug;
-use rocket::{get, uri, Response, Route, State};
+use rocket::{catch, get, uri, Response, Route, State};
 use rocket::fs::NamedFile;
 use rocket::http::{ContentType, Header};
 use rocket::http::hyper::body::Buf;
@@ -13,8 +13,11 @@ use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use serde_json::Value;
 use tokio::sync::Mutex;
+use crate::guards::{AuthUser};
 use crate::managers::libraries::LibraryManager;
+use crate::routes::ui::auth;
 use crate::util::{JsonErrorResponse, ResponseError};
+
 
 #[get("/")]
 pub async fn index(route: &Route) -> Template {
@@ -32,7 +35,7 @@ pub async fn redirect_list_library_files(libraries: &State<Arc<Mutex<LibraryMana
 
 
 #[get("/library/<library_id>/<_>/<path..>")]
-pub async fn list_library_files(route: &Route, libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: PathBuf)
+pub async fn list_library_files(user: AuthUser, route: &Route, libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: PathBuf)
     -> Result<Template, ResponseError>
 {
     let libs = libraries.lock().await;
@@ -63,9 +66,8 @@ pub async fn list_library_files(route: &Route, libraries: &State<Arc<Mutex<Libra
         .collect();
     debug!("parent={:?}", parent);
     debug!("segments={:?}", segments);
-
     Ok(Template::render("libraries", context! {
-        user: true,
+        user: user.user,
         route: route.uri.path(),
         library: library.model(),
         files: files,
