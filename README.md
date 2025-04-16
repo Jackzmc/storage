@@ -6,7 +6,7 @@
 
 This project takes heavily inspiration from [Seafile](https://www.seafile.com/) in its functionality and UI design. File hosting service with performance, ease of use, and being lightweight.
 
-** Project is under heavy active development **
+**Notice: Project is under heavy active development**
 
 Key features include:
 
