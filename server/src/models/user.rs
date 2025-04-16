@@ -8,6 +8,8 @@ use crate::models::repo::RepoModel;
 #[derive(Serialize, Clone, Debug)]
 pub struct UserModel {
     pub id: Uuid,
+    // email
+    // password
     pub created_at: NaiveDateTime,
     pub name: String
 }

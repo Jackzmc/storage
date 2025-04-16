@@ -1,14 +1,21 @@
 use std::fs;
 use std::io::Cursor;
+use log::trace;
+use rand::rngs::OsRng;
+use rand::{rng, Rng, TryRngCore};
+use rand::distr::Alphanumeric;
 use rocket::http::{ContentType, Status};
 use rocket::{response, Request, Response};
 use rocket::fs::relative;
 use rocket::response::Responder;
 use rocket::serde::Serialize;
 use rocket_dyn_templates::handlebars::Handlebars;
+use rocket_session_store::{Session, SessionError, SessionResult};
 use sqlx::Error;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use uuid::Uuid;
+use crate::SessionData;
 use crate::util::ResponseError::DatabaseError;
 
 pub(crate) fn setup_logger() {
@@ -19,6 +26,41 @@ pub(crate) fn setup_logger() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+}
+
+pub async fn set_csrf(session: &Session<'_, SessionData>) -> String {
+    let token = gen_csrf_token();
+    trace!("set_csrf token={}", token);
+    let mut sess = session.get().await.expect("failed to get session data")
+        .unwrap_or_else(|| SessionData {
+            csrf_token: None,
+            login: None,
+        });
+    sess.csrf_token = Some(token.clone());
+    session.set(sess).await.unwrap();
+    token
+}
+
+pub async fn validate_csrf(session: &Session<'_, SessionData>, form_csrf_token: &str) -> Result<bool, SessionError> {
+    if let Some(mut sess) = session.get().await? {
+        if let Some(sess_token) = sess.csrf_token {
+            let success = sess_token == form_csrf_token;
+            if success {
+                sess.csrf_token = None;
+                session.set(sess).await?;
+                return Ok(true)
+            }
+        }
+    }
+    Ok(false)
+}
+
+pub fn gen_csrf_token() -> String {
+    rng()
+        .sample_iter(&Alphanumeric)
+        .map(char::from) // map added here
+        .take(30)
+        .collect()
 }
 
 // pub(crate) fn setup_template_engine() -> Handlebars<'static> {
