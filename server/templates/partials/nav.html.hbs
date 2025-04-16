@@ -14,6 +14,7 @@
 
     </div>
     <div class="navbar-end">
+        {{#if user}} <!-- TODO: only show w/ route is library/files --> 
         <div class="navbar-item" style="width:300px">
             <div class="field" style="width:100%" >
                 <p class="control has-icons-left">
@@ -24,6 +25,8 @@
                 </p>
             </div>
         </div>
+        {{/if}}
+        {{#if user}}
         <div class="navbar-item">
             <a class="icon  has-text-black">
                 <i class="far fa-bell"></i>
@@ -57,5 +60,6 @@
      
             </div>
         </div>
+        {{/if}}
     </div>
 </nav>

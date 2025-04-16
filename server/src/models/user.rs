@@ -1,9 +1,11 @@
 use chrono::NaiveDateTime;
+use rocket::serde::Serialize;
 use rocket::serde::uuid::Uuid;
 use sqlx::query_as;
 use crate::DB;
 use crate::models::repo::RepoModel;
 
+#[derive(Serialize, Clone, Debug)]
 pub struct UserModel {
     pub id: Uuid,
     pub created_at: NaiveDateTime,

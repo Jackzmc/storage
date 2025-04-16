@@ -18,7 +18,7 @@ use crate::util::{JsonErrorResponse, ResponseError};
 
 #[get("/")]
 pub async fn index(route: &Route) -> Template {
-    Template::render("index", context! { route: route.uri.path(), test: "value" })
+    Template::render("index", context! { user: true, route: route.uri.path(), test: "value" })
 }
 
 #[get("/library/<library_id>")]
@@ -65,6 +65,7 @@ pub async fn list_library_files(route: &Route, libraries: &State<Arc<Mutex<Libra
     debug!("segments={:?}", segments);
 
     Ok(Template::render("libraries", context! {
+        user: true,
         route: route.uri.path(),
         library: library.model(),
         files: files,

@@ -72,3 +72,6 @@ tr.file-list td.filecell-icon .fa-folder {
 tr.file-list td.filecell-label a {
     color: var(--accent-color);
 }
+.login-bg {
+    background-image: linear-gradient(to top, #fbc2eb 0%, #a6c1ee 100%);
+}
