@@ -59,6 +59,12 @@ struct SessionUser {
     name: String,
     email: String
 }
+#[derive(Serialize, Clone)]
+pub struct GlobalMetadata {
+    app_name: String,
+    app_version: String,
+    repo_url: String,
+}
 #[launch]
 async fn rocket() -> _ {
     setup_logger();
@@ -103,11 +109,18 @@ async fn rocket() -> _ {
             // slash which prevents the cookie from being sent for `example.com/myapp2/`).
             .path("/")
     };
+    
+    let metadata = GlobalMetadata {
+        app_name: env!("CARGO_PKG_NAME").to_string(),
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+        repo_url: env!("CARGO_PKG_REPOSITORY").to_string(),
+    };
 
     rocket::build()
         .manage(pool)
         .manage(repo_manager)
         .manage(libraries_manager)
+        .manage(metadata)
 
         .attach(store.fairing())
         .attach(Template::custom(|engines| {
@@ -123,8 +136,10 @@ async fn rocket() -> _ {
         .mount("/api/library", routes![
             api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
         ])
-        .mount("/auth", routes![
-            ui::auth::logout, ui::auth::login, ui::auth::login_handler, ui::auth::register, ui::auth::register_handler,
+        .mount("/", routes![
+            ui::auth::logout,
+            ui::auth::login::page, ui::auth::login::handler, ui::auth::register::page, ui::auth::register::handler,
+            ui::auth::forgot_password::page, ui::auth::forgot_password::handler,
         ])
         .mount("/", routes![
             ui::help::about,
@@ -141,7 +156,7 @@ async fn rocket() -> _ {
 
 #[catch(401)]
 pub fn not_authorized(req: &Request) -> Redirect {
-    // uri!(ui::auth::login) doesn't work, it redirects to /login instead
+    // TODO: do uri!()
     Redirect::to(format!("/auth/login?return_to={}", req.uri().path().percent_encode()))
 }
 

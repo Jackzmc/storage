@@ -1,7 +1,7 @@
 {{#> layouts/default body-class="has-background-white-ter login-bg" }}
     <br><br>
     <div class="container py-6" style="width:20%"> <!-- TODO: fix width on mobile -->
-        <h1 class="title is-1 has-text-centered">storage-app</h1>
+        <h1 class="title is-1 has-text-centered">{{ meta.app_name }}</h1>
         <div class="box is-radiusless">
             <h4 class="title is-4 has-text-centered">Register</h4>
             {{#if can_register }}
@@ -53,10 +53,8 @@
                 </div>
             </form>
             {{else}}
-            <div class="block ml-2 content">
-                <p><i class="fas fa-xmark"></i>Registeration has been disabled</p>
-
-                {{!-- <p>Contact administrator</p> --}}
+            <div class="notification is-danger is-light">
+                <p><i class="fas fa-xmark"></i> Registration has been disabled</p>
             </div>
             {{/if}}
             <span>
@@ -72,5 +70,6 @@
                 </div>
             </div>
         </div>
+        <p>Powered by <b><a href="{{meta.repo_url}}">{{ meta.app_name }}</a></b> v{{meta.app_version}}</p>
     </div>
 {{/layouts/default}}
