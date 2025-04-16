@@ -108,7 +108,7 @@ async fn rocket() -> _ {
             api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
         ])
         .mount("/auth", routes![
-            ui::auth::login
+            ui::auth::login, ui::auth::login_handler, ui::auth::register, ui::auth::register_handler,
         ])
         .mount("/", routes![
             ui::help::about,
