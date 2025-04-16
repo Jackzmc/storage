@@ -21,6 +21,7 @@ use crate::managers::repos::RepoManager;
 use crate::objs::library::Library;
 use crate::util::{setup_logger, JsonErrorResponse, ResponseError};
 use routes::api;
+use crate::models::user::UserModel;
 use crate::routes::ui;
 
 mod routes;
@@ -39,7 +40,7 @@ const MAX_UPLOAD_SIZE: ByteUnit = ByteUnit::Mebibyte(100_000);
 
 #[derive(Clone, Debug, Serialize)]
 struct SessionData {
-    user_name: String
+    user: UserModel,
 }
 
 #[launch]
@@ -105,6 +106,9 @@ async fn rocket() -> _ {
         .mount("/static", FileServer::from(relative!("static")))
         .mount("/api/library", routes![
             api::library::move_file, api::library::upload_file, api::library::download_file, api::library::list_files, api::library::get_file, api::library::delete_file,
+        ])
+        .mount("/auth", routes![
+            ui::auth::login
         ])
         .mount("/", routes![
             ui::help::about,
