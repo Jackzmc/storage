@@ -11,6 +11,8 @@ Key features include:
 - Multiple libraries per user, each with configurable storage backends
 - WebDAV (soon)
 
+![screenshot of files screen](docs/images/screenshot-files.png)
+_The current files list when logged in_
 
 ## Getting Started
 
