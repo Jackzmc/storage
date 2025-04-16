@@ -1,0 +1,57 @@
+{{#> layouts/default body-class="has-background-white-ter login-bg" }}
+    <br><br>
+    <div class="container py-6" style="width:20%"> <!-- TODO: fix width on mobile -->
+        <h1 class="title is-1 has-text-centered">storage-app</h1>
+        <div class="box is-radiusless">
+            <h4 class="title is-4 has-text-centered">Login</h4>
+            <form method="post" action="/auth/login">
+                <div class="field">
+                    <label class="label">Username / Email</label>
+                    <div class="control has-icons-left">
+                        <input required name="username" class="input" type="text" placeholder="Username or Email">
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-user"></i>
+                        </span>
+                    </div>
+                    {{!-- <p class="help is-success">This username is available</p> --}}
+                </div>
+                <div class="field">
+                    <label class="label">Password</label>
+                    <div class="control has-icons-left">
+                        <input required name="password" class="input" type="text" placeholder="hunter2">
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-key"></i>
+                        </span>
+                    </div>
+                    {{!-- <p class="help is-success">This username is available</p> --}}
+                </div>
+                <div class="field">
+                    <div class="control">
+                        <label class="checkbox">
+                            <input name="remember" type="checkbox">
+                            Remember Me</a>
+                        </label>
+                    </div>
+                </div>
+                <hr>
+                <div class="buttons">
+                    <button class="button is-link is-fullwidth" type="submit" >Login</button>
+                    {{#if sso_enabled}}
+                    <a href="/login/sso" class="button is-fullwidth">Login with SSO</a>
+                    {{/if}}
+                </div>
+            </form>
+            <br>
+            <a href="/auth/forgot-password">Forgot password?</a>
+            <div class="field is-pulled-right">
+                <div class="control">
+                    <div class="select is-small">
+                        <select>
+                            <option selected value="en-us">English</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{{/layouts/default}}
