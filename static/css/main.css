@@ -2,6 +2,10 @@
     --accent-color: rgb(231, 148, 162);
 }
 
+.navbar {
+    background-image: linear-gradient(to right, #fbc2eb 0%, #a6c1ee 20%);
+}
+
 .sidebar {
 
 }
