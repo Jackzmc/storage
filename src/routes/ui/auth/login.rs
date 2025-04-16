@@ -1,5 +1,5 @@
 use std::net::IpAddr;
-use log::debug;
+use log::{debug, trace};
 use rocket::{get, post, FromForm, Responder, Route, State};
 use rocket::form::{Context, Contextual, Form};
 use rocket::http::{Header, Status};
@@ -59,8 +59,10 @@ pub async fn handler(
     mut form: Form<Contextual<'_, LoginForm<'_>>>,
     return_to: Option<String>,
 ) -> Result<HackyRedirectBecauseRocketBug, Template> {
+    trace!("handler");
     validate_csrf_form(&mut form.context, &session).await;
     let user = validate_user_form(&mut form.context, &pool).await;
+    trace!("check form");
     if form.context.status() == Status::Ok {
         if let Some(submission) = &form.value {
             session.set(SessionData {
@@ -70,17 +72,19 @@ pub async fn handler(
                     ip_address: ip_addr,
                 }),
             }).await.unwrap();
-            debug!("returning user to {:?}", return_to);
-            let return_to_path = return_to.unwrap_or("/".to_string());
+            let mut return_to_path = return_to.unwrap_or("/".to_string());
+            if return_to_path == "" { return_to_path.push_str("/"); }
+            debug!("returning user to {:?}", return_to_path);
+
             // Rocket redirect fails when `Redirect::to("/path/ has spaces")` has spaces, so manually do location... works better
             return Ok(HackyRedirectBecauseRocketBug {
                 inner: "Login successful, redirecting...".to_string(),
                 location: Header::new("Location", return_to_path),
             })
-            // let return_to_uri = Uri::parse::<Origin>(&return_to_path).unwrap_or(Uri::parse::<Origin>("/").unwrap());
-            // return Ok(Redirect::found(return_to_uri))
         }
+        trace!("submission failed");
     }
+    trace!("form failed");
 
     let csrf_token = set_csrf(&session).await;
     let ctx = context! {

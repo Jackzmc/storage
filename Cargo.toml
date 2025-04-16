@@ -1,5 +1,5 @@
 [package]
-name = "storage-app"
+name = "storage_app"
 version = "0.1.0"
 edition = "2024"
 repository = "https://github.com/jackzmc/storage"

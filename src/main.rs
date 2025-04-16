@@ -142,8 +142,10 @@ async fn rocket() -> _ {
             ui::auth::forgot_password::page, ui::auth::forgot_password::handler,
         ])
         .mount("/", routes![
-            ui::help::about,
             ui::user::index, ui::user::redirect_list_library_files, ui::user::list_library_files, ui::user::get_library_file,
+        ])
+        .mount("/", routes![
+            ui::help::about,
             ui::help::test_get
         ])
         .register("/api", catchers![
