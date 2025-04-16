@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project takes heavily inspiration from [Seafile](https://www.seafile.com/) in its functionality and UI design. File hosting service with performance, ease of use, and being lightweight.
+This project takes heavily inspiration from [Seafile](https://www.seafile.com/) in its functionality and UI design. File hosting service with performance, ease of use, and being lightweight. 
 
 Key features include:
 
@@ -55,6 +55,13 @@ cargo run --release
 ## Documentation
 
 Todo, will be available at https://git.jackz.me/jackz/storage/wiki
+
+## Development
+
+The server is written in Rust, using the [Rocket](https://rocket.rs/) framework and [handlebars](https://github.com/sunng87/handlebars-rust) for HTML templating.
+The frontend is just HTML and CSS, using the [Bulma CSS framework](https://bulma.io). As little javascript as possible should be done for frontend work.
+
+Contributions are welcome
 
 # License
 
