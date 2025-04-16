@@ -5,6 +5,7 @@
         <div class="box is-radiusless">
             <h4 class="title is-4 has-text-centered">Login</h4>
             <form method="post" action="/auth/login">
+                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
                 <div class="field">
                     <label class="label">Username / Email</label>
                     <div class="control has-icons-left">
@@ -28,7 +29,7 @@
                 <div class="field">
                     <div class="control">
                         <label class="checkbox">
-                            <input name="remember" type="checkbox">
+                            <input name="remember_me" type="checkbox">
                             Remember Me</a>
                         </label>
                     </div>

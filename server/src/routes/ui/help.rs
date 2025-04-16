@@ -11,18 +11,6 @@ pub fn about(route: &Route) -> Template {
     Template::render("about", context! { route: route.uri.path() })
 }
 
-// TODO: temp remove when not needed
-#[get("/test/set")]
-pub async fn test_set(session: Session<'_, SessionData>) -> &str {
-    session.set(SessionData {
-        user: UserModel {
-            id: Default::default(),
-            created_at: Default::default(),
-            name: "Jackie".to_string(),
-        },
-    }).await;
-    "set."
-}
 
 #[get("/test/get")]
 pub async fn test_get(session: Session<'_, SessionData>) -> Result<Json<SessionData>, String> {

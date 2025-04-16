@@ -1,3 +1,4 @@
+use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use log::{debug, error, info, trace, warn};
@@ -38,11 +39,22 @@ pub type DB = Pool<Postgres>;
 
 const MAX_UPLOAD_SIZE: ByteUnit = ByteUnit::Mebibyte(100_000);
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Default)]
 struct SessionData {
-    user: UserModel,
+    csrf_token: Option<String>,
+    login: Option<LoginSessionData>,
 }
-
+#[derive(Clone, Debug, Serialize)]
+struct LoginSessionData {
+    user: UserModel,
+    ip_address: IpAddr,
+}
+#[derive(Clone, Debug, Serialize)]
+struct SessionUser {
+    id: String,
+    name: String,
+    email: String
+}
 #[launch]
 async fn rocket() -> _ {
     setup_logger();
@@ -113,7 +125,7 @@ async fn rocket() -> _ {
         .mount("/", routes![
             ui::help::about,
             ui::user::index, ui::user::redirect_list_library_files, ui::user::list_library_files, ui::user::get_library_file,
-            ui::help::test_get, ui::help::test_set
+            ui::help::test_get
         ])
 }
 
