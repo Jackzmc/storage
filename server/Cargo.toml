@@ -1,7 +1,9 @@
 [package]
-name = "storage-server"
+name = "storage-app"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/jackzmc/storage"
+
 
 [dependencies]
 rocket = { version = "0.5.1", features = ["json", "uuid"] }
