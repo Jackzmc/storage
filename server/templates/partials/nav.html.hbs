@@ -14,7 +14,7 @@
 
     </div>
     <div class="navbar-end">
-        {{#if user}} <!-- TODO: only show w/ route is library/files --> 
+        {{#if session.user }} <!-- TODO: only show w/ route is library/files --> 
         <div class="navbar-item" style="width:300px">
             <div class="field" style="width:100%" >
                 <p class="control has-icons-left">
@@ -26,7 +26,7 @@
             </div>
         </div>
         {{/if}}
-        {{#if user}}
+        {{#if session.user }}
         <div class="navbar-item">
             <a class="icon  has-text-black">
                 <i class="far fa-bell"></i>
@@ -37,25 +37,27 @@
         <div class="navbar-item has-dropdown is-hoverable">
             <a class="navbar-link">
                 <img src="/static/img/default_user.png" alt="User Image" />
-                {{ debug user }}
+                {{ session.user.name }}
             </a>
         
-            <div class="navbar-dropdown">
+            <div class="navbar-dropdown mr-4 is-right  is-radiusless">
                 <div class="dropdown-content">
-                    <div class="block px-4 py-4">
-                        <b>Quota</b>
-                        <progress class="progress" min=0 value=20 max=100 />
+                    <div class="navbar-item">
+                        {{ session.user.username }}
                     </div>
-
-                    <a class="navbar-item" href="/help/about">
-                        About
+                    <div class="navbar-item">
+                        {{ session.user.email }}
+                    </div>
+                    <hr class="navbar-divider">
+                    <a class="navbar-item" href="/settings">
+                        <i class="fa fa-cog"></i>Settings
                     </a>
-                    <a class="navbar-item">
-                        Contact
+                    <a class="navbar-item" href="/admin">
+                        <i class="fa fa-star"></i> Admin Panel
                     </a>
                     <hr class="navbar-divider">
-                    <a class="navbar-item">
-                        Report an issue
+                    <a class="navbar-item has-text-danger" href="/auth/logout">
+                        <i class="fa fa-square-up-right"></i>Logout
                     </a>
                 </div>
      

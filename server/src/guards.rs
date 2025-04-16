@@ -6,7 +6,7 @@ use crate::models::user::UserModel;
 use crate::{LoginSessionData, SessionData};
 
 pub struct AuthUser {
-    pub user: LoginSessionData
+    pub session: LoginSessionData
 }
 
 #[derive(Debug)]
@@ -29,7 +29,7 @@ impl<'r> FromRequest<'r> for AuthUser {
             _ => return Outcome::Forward(Status::Unauthorized),
         };
         if let Some(login) = &sess.login {
-            Outcome::Success(Self { user: login.clone() })
+            Outcome::Success(Self { session: login.clone() })
         } else {
             Outcome::Forward(Status::Unauthorized)
         }
