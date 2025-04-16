@@ -4,27 +4,42 @@
         <h1 class="title is-1 has-text-centered">storage-app</h1>
         <div class="box is-radiusless">
             <h4 class="title is-4 has-text-centered">Login</h4>
+            {{debug this}}
+            {{#if (len form.form_errors) includeZero=true  }}
+            <div class="notification is-danger is-light">
+                <b>Login failed with errors:</b>
+                <ul>
+                    {{#each form.form_errors}}
+                    <li>{{msg}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}}
             <form method="post" action="/auth/login">
                 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
                 <div class="field">
                     <label class="label">Username / Email</label>
                     <div class="control has-icons-left">
-                        <input required name="username" class="input" type="text" placeholder="Username or Email">
+                        <input required name="username" class="input {{#if errors.username}}is-danger{{/if}}" type="text" placeholder="Username or Email">
                         <span class="icon is-small is-left">
                             <i class="fas fa-user"></i>
                         </span>
                     </div>
-                    {{!-- <p class="help is-success">This username is available</p> --}}
+                    {{#if errors.username }}
+                    <p class="help is-danger">{{errors.username}}</p>
+                    {{/if}}
                 </div>
                 <div class="field">
                     <label class="label">Password</label>
                     <div class="control has-icons-left">
-                        <input required name="password" class="input" type="password" placeholder="hunter2">
+                        <input required name="password" class="input {{#if errors.password}}is-danger{{/if}}" type="password" placeholder="hunter2">
                         <span class="icon is-small is-left">
                             <i class="fas fa-key"></i>
                         </span>
                     </div>
-                    {{!-- <p class="help is-success">This username is available</p> --}}
+                    {{#if errors.username }}
+                        <p class="help is-danger">{{errors.password}}</p>
+                    {{/if}}
                 </div>
                 <div class="field">
                     <div class="control">

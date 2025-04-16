@@ -5,7 +5,9 @@ use rand::rngs::OsRng;
 use rand::{rng, Rng, TryRngCore};
 use rand::distr::Alphanumeric;
 use rocket::http::{ContentType, Status};
-use rocket::{response, Request, Response};
+use rocket::{form, response, Request, Response};
+use rocket::form::Context;
+use rocket::form::error::Entity;
 use rocket::fs::relative;
 use rocket::response::Responder;
 use rocket::serde::Serialize;
@@ -41,19 +43,25 @@ pub async fn set_csrf(session: &Session<'_, SessionData>) -> String {
     session.set(sess).await.unwrap();
     token
 }
-
-pub async fn validate_csrf(session: &Session<'_, SessionData>, form_csrf_token: &str) -> Result<bool, SessionError> {
-    if let Some(mut sess) = session.get().await? {
-        if let Some(sess_token) = sess.csrf_token {
-            let success = sess_token == form_csrf_token;
-            if success {
-                sess.csrf_token = None;
-                session.set(sess).await?;
-                return Ok(true)
+pub(crate) async fn validate_csrf_form(ctx: &mut Context<'_>, session: &Session<'_, SessionData>) -> bool {
+    if let Some(form_token) = ctx.field_value("_csrf") {
+        if let Some(mut sess) = session.get().await.unwrap() {
+            if let Some(sess_token) = sess.csrf_token {
+                let success = sess_token == form_token;
+                if success {
+                    sess.csrf_token = None;
+                    session.set(sess).await.unwrap();
+                    return true
+                }
             }
         }
+    } else {
+        ctx.push_error(form::Error::validation("_csrf token invalid").with_entity(Entity::Form));
+        return false
     }
-    Ok(false)
+    // CSRF failed, set error
+    ctx.push_error(rocket::form::Error::validation("CSRF Validation failed").with_entity(Entity::Form));
+    false
 }
 
 pub fn gen_csrf_token() -> String {

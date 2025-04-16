@@ -13,11 +13,18 @@ pub(crate) fn bytes(h: &Helper< '_>, _: &Handlebars<'_>, _: &Context, rc:
 
 pub(crate) fn debug(h: &Helper< '_>, _: &Handlebars<'_>, _: &Context, rc:
 &mut RenderContext<'_, '_>, out: &mut dyn Output)  -> HelperResult {
-    let param = h.param(0)
-        .and_then(|v| v.value().as_object())
-        .ok_or::<RenderError>(RenderErrorReason::ParamNotFoundForIndex("", 0).into())?;
-    let output = serde_json::to_string(param).unwrap();
-    out.write(&output)?;
+    if let Some(param) = h.param(0) {
+        if let Some(obj) = param.value().as_object() {
+            let output = serde_json::to_string(obj).unwrap();
+            out.write(&output)?;
+        } else if let Some(str) = param.value().as_str() {
+            out.write(str)?;
+        } else {
+            out.write("[unknown]")?;
+        }
+    } else {
+        out.write("undefined")?;
+    }
     Ok(())
 }
 
