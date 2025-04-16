@@ -48,14 +48,17 @@ cargo run --release
 
 ## Roadmap
 
+Rough roadmap in a rough order of priority
+
 * [ ] WebDAV Support
-* [ ] S3 backend support
+* [ ] Email support (for password resets, user invites)
+* [ ] SSO Support (openid)
 * [ ] Administration panel
   * [ ] Add storage backends
   * [ ] Manage users
   * [ ] Change app settings
-* [ ] Email support (for password resets, user invites)
-
+* [ ] S3 backend support
+  
 ## Documentation
 
 Todo, will be available at https://git.jackz.me/jackz/storage/wiki
