@@ -22,6 +22,7 @@ use crate::managers::repos::RepoManager;
 use crate::objs::library::Library;
 use crate::util::{setup_logger, JsonErrorResponse, ResponseError};
 use routes::api;
+use crate::consts::{SESSION_COOKIE_NAME, SESSION_LIFETIME_SECONDS};
 use crate::models::user::UserModel;
 use crate::routes::ui;
 
@@ -34,10 +35,10 @@ mod models;
 mod managers;
 mod objs;
 mod helpers;
+mod consts;
 
 pub type DB = Pool<Postgres>;
 
-const MAX_UPLOAD_SIZE: ByteUnit = ByteUnit::Mebibyte(100_000);
 
 #[derive(Clone, Debug, Serialize, Default)]
 struct SessionData {
@@ -89,8 +90,8 @@ async fn rocket() -> _ {
     let memory_store: MemoryStore::<SessionData> = MemoryStore::default();
     let store: SessionStore<SessionData> = SessionStore {
         store: Box::new(memory_store),
-        name: "storage-session".into(),
-        duration: Duration::from_secs(3600 * 24 * 14),
+        name: SESSION_COOKIE_NAME.into(),
+        duration: Duration::from_secs(SESSION_LIFETIME_SECONDS),
         // The cookie builder is used to set the cookie's path and other options.
         // Name and value don't matter, they'll be overridden on each request.
         cookie_builder: CookieBuilder::new("", "")

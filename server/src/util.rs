@@ -15,6 +15,7 @@ use sqlx::Error;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use uuid::Uuid;
+use crate::models::user::{UserAuthError,};
 use crate::SessionData;
 use crate::util::ResponseError::DatabaseError;
 
@@ -95,6 +96,8 @@ pub enum ResponseError {
     GenericError,
     InternalServerError(JsonErrorResponse),
     DatabaseError(JsonErrorResponse),
+    AuthError(UserAuthError),
+    CSRFError
 }
 
 impl ResponseError {
@@ -103,6 +106,9 @@ impl ResponseError {
             ResponseError::InternalServerError(_) => Status::InternalServerError,
             ResponseError::GenericError => Status::InternalServerError,
             ResponseError::NotFound(_) => Status::NotFound,
+            ResponseError::DatabaseError(_) => Status::InternalServerError,
+            ResponseError::AuthError(e) => e.get_response_code(),
+            ResponseError::CSRFError => Status::Unauthorized,
             _ => Status::BadRequest,
         }
     }
@@ -118,6 +124,13 @@ impl ResponseError {
             },
             ResponseError::InternalServerError(e) => e,
             DatabaseError(e) => e,
+            ResponseError::AuthError(e) => e.into_response_err(),
+            ResponseError::CSRFError => {
+                JsonErrorResponse {
+                    code: "CSRF_VALIDATION_FAILED".to_string(),
+                    message: "CSRF Token is invalid / expired or does not exist. Reload the form and try again".to_string(),
+                }
+            }
         }
     }
 }
@@ -128,6 +141,12 @@ impl From<sqlx::Error> for ResponseError {
             code: err.code().map(|s| s.to_string()).unwrap_or_else(|| "UNKNOWN".to_string()),
             message: err.message().to_string(),
         })
+    }
+}
+
+impl From<UserAuthError> for ResponseError {
+    fn from(value: UserAuthError) -> Self {
+        ResponseError::AuthError(value)
     }
 }
 
