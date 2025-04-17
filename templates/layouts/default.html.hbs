@@ -17,4 +17,7 @@
 	<body class="{{body-class}}">
         {{> @partial-block }}
 	</body>
+    {{#if has-scripts}}
+        {{> scripts}}
+    {{/if}}
 </html>

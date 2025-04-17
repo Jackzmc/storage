@@ -61,7 +61,7 @@ pub fn get_backend(storage_type: &str, settings: &JsonValue) -> Result<Option<Bo
 
 pub trait StorageBackend {
     // fn new(settings: &JsonValue) -> Result<Self, StorageBackendError>;
-
+    fn touch_file(&self, library_id: &str, rel_path: &PathBuf, file_type: FileType) -> Result<(), anyhow::Error>;
     fn write_file(&self, library_id: &str, rel_path: &PathBuf, contents: &[u8]) -> Result<(), anyhow::Error>;
 
     fn read_file(&self, library_id: &str, rel_path: &PathBuf) -> Result<Option<Vec<u8>>, anyhow::Error>;

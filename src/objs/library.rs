@@ -3,12 +3,13 @@ use std::io::BufReader;
 use std::path::PathBuf;
 use anyhow::Error;
 use rocket::response::stream::ReaderStream;
+use rocket::serde::Serialize;
 use tokio::io::BufStream;
 use crate::managers::repos::RepoContainer;
 use crate::{models, DB};
 use crate::models::library::LibraryModel;
 use crate::models::repo::RepoModel;
-use crate::storage::FileEntry;
+use crate::storage::{FileEntry, FileType};
 use crate::util::{JsonErrorResponse, ResponseError};
 
 pub struct Library {
@@ -31,6 +32,11 @@ impl Library {
     pub async fn get_read_stream(&self, rel_path: &PathBuf) -> Result<BufReader<File>, anyhow::Error> {
         let mut repo = self.repo.read().await;
         repo.backend.get_read_stream(&self.model.id.to_string(), rel_path)
+    }
+
+    pub async fn touch_file(&self, rel_path: &PathBuf, file_type: FileType) -> Result<(), anyhow::Error> {
+        let mut repo = self.repo.read().await;
+        repo.backend.touch_file(&self.model.id.to_string(), rel_path, file_type)
     }
 
     pub async fn write_file(&self, rel_path: &PathBuf, contents: &[u8]) -> Result<(), anyhow::Error> {

@@ -1,28 +1,8 @@
-{{#> layouts/main }}
-<div class="">
-    <div class="modal" id="modal-prompt">
-        <div class="modal-background"></div>
-        <div class="modal-card is-radiusless">
-            <form onsubmit="touchSubmit(event)">
-                <header class="modal-card-head is-radiusless py-5">
-                    <p class="modal-card-title" id="modal-prompt-title">New Item</p>
-                    <button class="delete" aria-label="close"></button>
-                </header>
-                <section class="modal-card-body is-radiusless py-4">
-                    <input autocomplete="off" id="modal-prompt-type" required type="hidden">
-                    <input autocomplete="off" id="modal-prompt-input" required type="text" class="input" placeholder="">
-                </section>
-                <footer class="modal-card-foot is-radiusless py-3">
-                    <div class="buttons">
-                        <input type="submit" class="button is-primary" value="Create"></input>
-                    </div>
-                </footer>
-            </form>
-        </div>
-    </div>
+{{#> layouts/main has-scripts=1 }}
+<div id="app" x-data="{ touchPrompt: null }">
     <nav class="breadcrumb is-inline-block is-size-5 mb-0" aria-label="breadcrumbs">
         <ul>
-            <li><a class="has-text-black" href="/library/{{library.id}}/{{library.name}}/">{{ library.name }}</a></li>
+            <li><a class="has-text-black has-text-link" href="/library/{{library.id}}/{{library.name}}/">{{ library.name }}</a></li>
             {{#each path_segments}}
                 <li>
                     <a class="has-text-black" href="/library/{{../library.id}}/{{../library.name}}/{{path}}" aria-current="page">  {{ segment }} </a>
@@ -30,9 +10,10 @@
             {{/each}}
         </ul>
     </nav>
-    <div class="dropdown is-hoverable is-hidden" id="add-dropdown">
+    <span x-text="touchPrompt" ></span>
+    <div class="dropdown is-hoverable" id="add-dropdown" x-cloak>
         <div class="dropdown-trigger">
-            <button class="button is-small" aria-haspopup="true" aria-controls="dropdown-menu">
+            <button class="button is-small has-background-white-ter" aria-haspopup="true" aria-controls="dropdown-menu">
                 <span class="icon is-small">
                     <i class="fas fa-plus"></i>
                 </span>
@@ -40,28 +21,68 @@
         </div>
         <div class="dropdown-menu" role="menu">
             <div class="dropdown-content">
-                <a onclick="touch('file')" id="new_file" href="#" class="dropdown-item"> New File </a>
-                <a onclick="touch('folder')"id="new_folder" class="dropdown-item"> New Folder </a>
+                <a x-on:click="touchPrompt = 'file'" id="new_file" href="#" class="dropdown-item"> New File </a>
+                <a onclick="touch('folder')" id="new_folder" class="dropdown-item"> New Folder </a>
                 <hr class="dropdown-divider" />
                 <a onclick="upload('file')" id="upload_file" href="#" class="dropdown-item"> Upload File </a>
                 <a onclick="upload('folder')" id="upload_folder" href="#" class="dropdown-item"> Upload Folder </a>
             </div>
         </div>
     </div>
-    <noscript><em>Javascript required to create/upload files</noscript>
+    <noscript><em>Javascript required to create/upload files</em></noscript>
     <div class="is-pulled-right is-inline-block">
         <div class="buttons">
-            <div class="button is-small">
-                Display
+            <div class="dropdown is-hoverable" id="dropdown-display" x-cloak>
+                <div class="dropdown-trigger">
+                    <button class="button is-small has-background-white-ter" aria-haspopup="true" aria-controls="dropdown-menu">
+                        <span class="icon">
+                            <i class="fa fa-list is-small"></i>
+                        </span>
+                        <span>List</span>
+                        <span class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" role="menu">
+                    <div class="dropdown-content">
+                        <a href="#" class="dropdown-item is-active"> <i class="fa fa-list"></i> List View</a>
+                        <a class="dropdown-item"> <i class="fa fa-grip"></i> Grid View</a>
+                    </div>
+                </div>
             </div>
-            <div class="button is-small">
-                Sort
+            <div class="dropdown is-hoverable" id="dropdown-sort" x-cloak>
+                <div class="dropdown-trigger">
+                    <button class="button is-small has-background-white-ter" aria-haspopup="true" aria-controls="dropdown-menu">
+                        <span class="icon">
+                            <i class="fa fa-arrow-up is-small"></i>
+                        </span>
+                        <span>Sort by Name (asc)</span>
+                        <span class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" role="menu">
+                    <div class="dropdown-content">
+                        <a href="#" class="dropdown-item is-active"> By name ascending</a>
+                        <a class="dropdown-item"> By name descending</a>
+                        <a class="dropdown-item"> By last modified ascending</a>
+                        <a class="dropdown-item"> By last modified descending</a>
+                        <a class="dropdown-item"> By size ascending</a>
+                        <a class="dropdown-item"> By size ascending</a>
+                    </div>
+                </div>
             </div>
-            <div class="button is-small">
-                Info
+            <div class="button is-small has-background-white-ter">
+                <span class="icon">
+                <i class="fa fa-info"></i>
+                </span>
             </div>
-            <div class="button is-small">
-                ...
+            <div class="button is-small has-background-white-ter">
+                <span class="icon">
+                    <i class="fa fa-ellipsis"></i>
+                </span>
             </div>
         </div>
     </div>
@@ -69,7 +90,7 @@
     <table class="table is-fullwidth">
         <thead>
             <tr class="file-list">
-                <td style="width:0"><input type="checkbox" /></td>
+                <td style="width:0"><input type="checkbox" id="file-checkbox-all" /></td>
                 <td style="width:0"></td>
                 <td style="width:0"></td>
                 <td>Name </td>
@@ -81,11 +102,15 @@
         <tbody>
             {{#each files }}
                 <tr class="file-list">
-                    <td><input type="checkbox" /></td>
+                    <td><input type="checkbox" class="file-checkbox" /></td>
                     <td>
                         <a class="has-text-black">
                             <span class="icon is-large">
-                                <i class="fas fa-star fa-xl"></i>
+                                {{#if favorited}}
+                                    <i class="fas fa-star fa-xl"></i>
+                                {{else}}
+                                    <i class="far fa-star fa-xl"></i>
+                                {{/if}}
                             </span>
                         </a>
                     </td>
@@ -114,11 +139,63 @@
             {{/each}}
         </tbody>
     </table>
+    <div class="">
+        <div :class="{modal: true, 'is-active': touchPrompt != null}" id="modal-prompt" x-cloak>
+            <div class="modal-background"></div>
+            <div class="modal-card is-radiusless">
+                <form onsubmit="touchSubmit(event)">
+                    <header class="modal-card-head is-radiusless py-4">
+                        <p class="modal-card-title" id="modal-prompt-title">New Item</p>
+                        <button class="delete" aria-label="close"></button>
+                    </header>
+                    <section class="modal-card-body is-radiusless py-4">
+                        <input autocomplete="off" id="modal-prompt-type" required type="hidden">
+                        <input focus autocomplete="off" id="modal-prompt-input" required type="text" class="input" placeholder="">
+                    </section>
+                    <footer class="modal-card-foot is-radiusless py-2">
+                        <div class="buttons">
+                            <input type="submit" class="button is-primary" value="Create" />
+                        </div>
+                    </footer>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
-{{/layouts/main}}
-
+{{#*inline "scripts"}}
 <script>
-const LIBRARY_ID = "{{ library.id }}";
-const LIBRARY_PATH = "/{{ parent }}";
+    const LIBRARY_ID = "{{ library.id }}";
+    const LIBRARY_PATH = "/{{ parent }}";
 </script>
 <script src="/static/js/add_button.js"></script>
+<script>
+document.addEventListener('alpine:init', () => {
+    console.info('Alpine init')
+    Alpine.data('game', () => game);
+});
+</script>
+<script src="//unpkg.com/alpinejs" defer></script>
+{{!-- <script type="module">
+    import { createApp, ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js'
+
+    createApp({
+        delimiters: ['{%', '%}'],
+        setup() {
+            const message = ref('Hello Vue!')
+            const loaded = ref(false)
+            const touchPrompt = ref(false)
+            return {
+                loaded,
+                message,
+                touchPrompt
+            }
+        },
+        mounted() {
+            
+            this.loaded = true
+            console.info("Vue ready")
+        }
+    }).mount('#app')
+</script> --}}
+{{/inline}}
+{{/layouts/main}}

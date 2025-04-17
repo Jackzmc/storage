@@ -6,6 +6,7 @@ use rocket::fs::TempFile;
 use rocket::http::Status;
 use rocket::response::status;
 use rocket::serde::json::Json;
+use rocket::serde::Serialize;
 use sqlx::{query, Postgres};
 use sqlx::types::{Uuid};
 use tokio::io::AsyncReadExt;
@@ -16,7 +17,7 @@ use crate::managers::libraries::LibraryManager;
 use crate::managers::repos::RepoManager;
 use crate::models::library::{LibraryModel, LibraryWithRepoModel};
 use crate::models::user;
-use crate::storage::FileEntry;
+use crate::storage::{FileEntry, FileType};
 use crate::util::{JsonErrorResponse, ResponseError};
 #[get("/<library_id>")]
 pub(crate) async fn get_file(pool: &State<DB>, library_id: &str) -> Result<Option<Json<LibraryWithRepoModel>>, ResponseError> {
@@ -31,6 +32,18 @@ pub(crate) async fn list_files(libraries: &State<Arc<Mutex<LibraryManager>>>, li
     let library = libs.get(library_id).await?;
     library.list_files(&PathBuf::from(path)).await
         .map(|files| Json(files))
+        .map_err(|e| ResponseError::InternalServerError(JsonErrorResponse {
+            code: "STORAGE_ERROR".to_string(),
+            message: e.to_string(),
+        }))
+}
+
+
+#[post("/<library_id>/touch?<path>&<file_type>")]
+pub(crate) async fn touch_files(libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: &str, file_type: FileType) -> Result<(), ResponseError> {
+    let libs = libraries.lock().await;
+    let library = libs.get(library_id).await?;
+    library.touch_file(&PathBuf::from(path), file_type).await
         .map_err(|e| ResponseError::InternalServerError(JsonErrorResponse {
             code: "STORAGE_ERROR".to_string(),
             message: e.to_string(),

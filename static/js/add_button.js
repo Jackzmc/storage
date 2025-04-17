@@ -1,6 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const addDropdown = document.getElementById("add-dropdown")
-    addDropdown.classList.remove("is-hidden")
+    document.querySelector("#file-checkbox-all").addEventListener("input", (e) => {
+        const checked = e.target.checked
+        console.log("checked", checked)
+        document.querySelectorAll(".file-checkbox").forEach(el => {
+            el.checked = checked
+        })
+    })
+
+    const readyhiddenItems = document.getElementsByClassName("readyhidden");
+    for (let i = 0; i < readyhiddenItems.length; i++) {
+        readyhiddenItems.item(i).classList.remove("readyhidden")
+    }
 
     document.getElementById("modal-prompt-form")
 
