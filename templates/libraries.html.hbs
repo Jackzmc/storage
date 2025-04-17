@@ -1,5 +1,25 @@
 {{#> layouts/main }}
 <div class="">
+    <div class="modal" id="modal-prompt">
+        <div class="modal-background"></div>
+        <div class="modal-card is-radiusless">
+            <form onsubmit="touchSubmit(event)">
+                <header class="modal-card-head is-radiusless py-5">
+                    <p class="modal-card-title" id="modal-prompt-title">New Item</p>
+                    <button class="delete" aria-label="close"></button>
+                </header>
+                <section class="modal-card-body is-radiusless py-4">
+                    <input autocomplete="off" id="modal-prompt-type" required type="hidden">
+                    <input autocomplete="off" id="modal-prompt-input" required type="text" class="input" placeholder="">
+                </section>
+                <footer class="modal-card-foot is-radiusless py-3">
+                    <div class="buttons">
+                        <input type="submit" class="button is-primary" value="Create"></input>
+                    </div>
+                </footer>
+            </form>
+        </div>
+    </div>
     <nav class="breadcrumb is-inline-block is-size-5 mb-0" aria-label="breadcrumbs">
         <ul>
             <li><a class="has-text-black" href="/library/{{library.id}}/{{library.name}}/">{{ library.name }}</a></li>
@@ -8,11 +28,27 @@
                     <a class="has-text-black" href="/library/{{../library.id}}/{{../library.name}}/{{path}}" aria-current="page">  {{ segment }} </a>
                     </li>
             {{/each}}
-            <div class="button is-small">
-                +
-            </div>
         </ul>
     </nav>
+    <div class="dropdown is-hoverable is-hidden" id="add-dropdown">
+        <div class="dropdown-trigger">
+            <button class="button is-small" aria-haspopup="true" aria-controls="dropdown-menu">
+                <span class="icon is-small">
+                    <i class="fas fa-plus"></i>
+                </span>
+            </button>
+        </div>
+        <div class="dropdown-menu" role="menu">
+            <div class="dropdown-content">
+                <a onclick="touch('file')" id="new_file" href="#" class="dropdown-item"> New File </a>
+                <a onclick="touch('folder')"id="new_folder" class="dropdown-item"> New Folder </a>
+                <hr class="dropdown-divider" />
+                <a onclick="upload('file')" id="upload_file" href="#" class="dropdown-item"> Upload File </a>
+                <a onclick="upload('folder')" id="upload_folder" href="#" class="dropdown-item"> Upload Folder </a>
+            </div>
+        </div>
+    </div>
+    <noscript><em>Javascript required to create/upload files</noscript>
     <div class="is-pulled-right is-inline-block">
         <div class="buttons">
             <div class="button is-small">
@@ -80,3 +116,9 @@
     </table>
 </div>
 {{/layouts/main}}
+
+<script>
+const LIBRARY_ID = "{{ library.id }}";
+const LIBRARY_PATH = "/{{ parent }}";
+</script>
+<script src="/static/js/add_button.js"></script>
