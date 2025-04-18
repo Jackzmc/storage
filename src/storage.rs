@@ -6,6 +6,7 @@ use std::io::BufReader;
 use std::path::PathBuf;
 use anyhow::{anyhow, Error};
 use int_enum::IntEnum;
+use rocket::FromFormField;
 use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -18,7 +19,7 @@ pub enum StorageBackendMap {
     S3(S3Storage)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FromFormField)]
 #[serde(rename_all = "lowercase")]
 pub enum FileType {
     File,

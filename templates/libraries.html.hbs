@@ -36,9 +36,9 @@
                 <div class="dropdown-trigger">
                     <button class="button is-small has-background-white-ter" aria-haspopup="true" aria-controls="dropdown-menu">
                         <span class="icon">
-                            <i class="fa fa-list is-small"></i>
+                            <i class="fa {{#if (eq options.display 'grid')}}fa-grip{{else}}fa-list{{/if}} is-small"></i>
                         </span>
-                        <span>List</span>
+                        <span>{{#if (eq options.display 'grid')}}Grid{{else}}List{{/if}}</span>
                         <span class="icon is-small">
                             <i class="fas fa-angle-down" aria-hidden="true"></i>
                         </span>
@@ -46,8 +46,11 @@
                 </div>
                 <div class="dropdown-menu" role="menu">
                     <div class="dropdown-content">
-                        <a href="#" class="dropdown-item is-active"> <i class="fa fa-list"></i> List View</a>
-                        <a class="dropdown-item"> <i class="fa fa-grip"></i> Grid View</a>
+                        <a href="?display=list&sort_key={{options.sort_key}}&sort_dir={{options.sort_dir}}" 
+                            class="dropdown-item {{#if (eq options.display 'list')}}is-active{{/if}}"
+                        ><i class="fa fa-list"></i> List View</a>
+                        <a href="?display=grid&sort_key={{options.sort_key}}&sort_dir={{options.sort_dir}}" 
+                            class="dropdown-item {{#if (eq options.display 'grid')}}is-active{{/if}}"> <i class="fa fa-grip"></i> Grid View</a>
                     </div>
                 </div>
             </div>
@@ -57,7 +60,7 @@
                         <span class="icon">
                             <i class="fa fa-arrow-up is-small"></i>
                         </span>
-                        <span>Sort by Name (asc)</span>
+                        <span>Sort by {{ options.sort_key }} ({{ options.sort_dir }})</span>
                         <span class="icon is-small">
                             <i class="fas fa-angle-down" aria-hidden="true"></i>
                         </span>
@@ -65,12 +68,20 @@
                 </div>
                 <div class="dropdown-menu" role="menu">
                     <div class="dropdown-content">
-                        <a href="#" class="dropdown-item is-active"> By name ascending</a>
-                        <a class="dropdown-item"> By name descending</a>
-                        <a class="dropdown-item"> By last modified ascending</a>
-                        <a class="dropdown-item"> By last modified descending</a>
-                        <a class="dropdown-item"> By size ascending</a>
-                        <a class="dropdown-item"> By size ascending</a>
+                        {{#each DATA.sort_keys}}
+                            <a href="?display={{../options.display}}&sort_key={{this}}&sort_dir=asc"
+                                class="dropdown-item {{#if (eq ../options.sort_dir "asc")}}
+                                {{#if (eq ../options.sort_key this)}}
+                                    is-active
+                                {{/if}}
+                            {{/if}}">By {{this}} ascending</a>
+                            <a href="?display={{../options.display}}&sort_key={{this}}&sort_dir=desc"
+                                class="dropdown-item {{#if (eq ../options.sort_dir "desc")}}
+                                {{#if (eq ../options.sort_key this)}}
+                                    is-active 
+                                {{/if}}
+                            {{/if}}">By {{this}} descending</a>
+                        {{/each}}
                     </div>
                 </div>
             </div>
@@ -166,6 +177,7 @@
 <script>
     const LIBRARY_ID = "{{ library.id }}";
     const LIBRARY_PATH = "/{{ parent }}";
+    {{!-- let OPTIONS = JSON.parse(`{{{  options }}}`) --}}
 </script>
 <script src="/static/js/add_button.js"></script>
 <script>
@@ -175,27 +187,6 @@ document.addEventListener('alpine:init', () => {
 });
 </script>
 <script src="//unpkg.com/alpinejs" defer></script>
-{{!-- <script type="module">
-    import { createApp, ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js'
 
-    createApp({
-        delimiters: ['{%', '%}'],
-        setup() {
-            const message = ref('Hello Vue!')
-            const loaded = ref(false)
-            const touchPrompt = ref(false)
-            return {
-                loaded,
-                message,
-                touchPrompt
-            }
-        },
-        mounted() {
-            
-            this.loaded = true
-            console.info("Vue ready")
-        }
-    }).mount('#app')
-</script> --}}
 {{/inline}}
 {{/layouts/main}}

@@ -76,6 +76,7 @@ async fn rocket() -> _ {
     warn!("warn");
     error!("error");
 
+    // TODO: move to own fn
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(std::env::var("DATABASE_URL").unwrap().as_str())
@@ -96,6 +97,7 @@ async fn rocket() -> _ {
         Arc::new(Mutex::new(manager))
     };
 
+    // TODO: move to own func
     let memory_store: MemoryStore::<SessionData> = MemoryStore::default();
     let store: SessionStore<SessionData> = SessionStore {
         store: Box::new(memory_store),
@@ -109,7 +111,8 @@ async fn rocket() -> _ {
             // slash which prevents the cookie from being sent for `example.com/myapp2/`).
             .path("/")
     };
-    
+
+    // TODO: move to constants
     let metadata = GlobalMetadata {
         app_name: env!("CARGO_PKG_NAME").to_string(),
         app_version: env!("CARGO_PKG_VERSION").to_string(),

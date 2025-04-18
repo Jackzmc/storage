@@ -1,3 +1,4 @@
+use std::cell::OnceCell;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -13,6 +14,7 @@ use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use serde_json::Value;
 use tokio::sync::Mutex;
+use crate::consts::FILE_CONSTANTS;
 use crate::guards::{AuthUser};
 use crate::managers::libraries::LibraryManager;
 use crate::routes::ui::auth;
@@ -30,14 +32,20 @@ pub async fn redirect_list_library_files(user: AuthUser, libraries: &State<Arc<M
 {
     let libs = libraries.lock().await;
     let library = libs.get(library_id).await?;
-    Ok(Redirect::to(uri!(list_library_files(library_id, library.model().name, ""))))
+    Ok(Redirect::to(uri!(list_library_files(library_id, library.model().name, "", Some("name"), Some("asc"), Some("list")))))
 }
 
-
-#[get("/library/<library_id>/<_>/<path..>")]
-pub async fn list_library_files(user: AuthUser, route: &Route, libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: PathBuf)
-    -> Result<Template, ResponseError>
-{
+#[get("/library/<library_id>/<_>/<path..>?<sort_key>&<sort_dir>&<display>")]
+pub async fn list_library_files(
+    user: AuthUser,
+    route: &Route,
+    libraries: &State<Arc<Mutex<LibraryManager>>>,
+    library_id: &str,
+    path: PathBuf,
+    sort_key: Option<String>,
+    sort_dir: Option<String>,
+    display: Option<String>,
+) -> Result<Template, ResponseError> {
     let libs = libraries.lock().await;
     let library = libs.get(library_id).await?;
     let files = library.list_files(&PathBuf::from(&path)).await
@@ -72,8 +80,34 @@ pub async fn list_library_files(user: AuthUser, route: &Route, libraries: &State
         library: library.model(),
         files: files,
         parent,
-        path_segments: segments
+        path_segments: segments,
+        // TODO: have struct?
+        options: FileDisplayOptions {
+            // TODO: prevent bad values
+            // TODO: fix login errror msg -------_____------
+            sort_key: validate_option(sort_key, FILE_CONSTANTS.sort_keys, "name"),
+            sort_dir: validate_option(sort_dir, &["asc", "desc"], "asc"),
+            display: validate_option(display, FILE_CONSTANTS.display_options, "list"),
+        },
+        DATA: FILE_CONSTANTS
     }))
+}
+
+/// Checks if option is in list of valid values, if not returns default_value
+fn validate_option(option: Option<String>, valid_values: &[&str], default_value: &str) -> String {
+    if let Some(option) = option {
+        if valid_values.contains(&&*option) {
+            return option.to_string()
+        }
+    }
+    default_value.to_string()
+}
+
+#[derive(Serialize)]
+struct FileDisplayOptions {
+    sort_key: String,
+    sort_dir: String,
+    display: String
 }
 
 #[derive(Debug, Serialize)]
