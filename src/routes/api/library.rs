@@ -17,6 +17,7 @@ use crate::managers::libraries::LibraryManager;
 use crate::managers::repos::RepoManager;
 use crate::models::library::{LibraryModel, LibraryWithRepoModel};
 use crate::models::user;
+use crate::objs::library::ListOptions;
 use crate::storage::{FileEntry, FileType};
 use crate::util::{JsonErrorResponse, ResponseError};
 #[get("/<library_id>")]
@@ -30,7 +31,7 @@ pub(crate) async fn get_file(pool: &State<DB>, library_id: &str) -> Result<Optio
 pub(crate) async fn list_files(libraries: &State<Arc<Mutex<LibraryManager>>>, library_id: &str, path: &str) -> Result<Json<Vec<FileEntry>>, ResponseError> {
     let libs = libraries.lock().await;
     let library = libs.get(library_id).await?;
-    library.list_files(&PathBuf::from(path)).await
+    library.list_files(&PathBuf::from(path), ListOptions::default()).await
         .map(|files| Json(files))
         .map_err(|e| ResponseError::InternalServerError(JsonErrorResponse {
             code: "STORAGE_ERROR".to_string(),

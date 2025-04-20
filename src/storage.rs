@@ -19,7 +19,7 @@ pub enum StorageBackendMap {
     S3(S3Storage)
 }
 
-#[derive(Debug, Serialize, Deserialize, FromFormField)]
+#[derive(Debug, Serialize, Deserialize, FromFormField, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum FileType {
     File,

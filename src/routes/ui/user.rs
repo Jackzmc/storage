@@ -17,6 +17,7 @@ use tokio::sync::Mutex;
 use crate::consts::FILE_CONSTANTS;
 use crate::guards::{AuthUser};
 use crate::managers::libraries::LibraryManager;
+use crate::objs::library::ListOptions;
 use crate::routes::ui::auth;
 use crate::util::{JsonErrorResponse, ResponseError};
 
@@ -55,7 +56,11 @@ pub async fn list_library_files(
     };
     let libs = libraries.lock().await;
     let library = libs.get(library_id).await?;
-    let files = library.list_files(&PathBuf::from(&path)).await
+    let list_options = ListOptions {
+        sort_field: Some(options.sort_key.clone()),
+        sort_descending: Some(options.sort_dir == "desc"),
+    };
+    let files = library.list_files(&PathBuf::from(&path), list_options).await
         .map_err(|e| ResponseError::InternalServerError(JsonErrorResponse {
             code: "STORAGE_ERROR".to_string(),
             message: e.to_string(),
