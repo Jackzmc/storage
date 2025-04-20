@@ -12,12 +12,14 @@ path = "/var/tmp/test"
 
 [auth]
 enable_registration = true
-openid_enabled = true
+oidc_enabled = true
 # Where the .well-known/openid-configuration exists
-openid_issuer_url = "https://accounts.example.com"
-openid_client_id = ""
-openid_client_secret = ""
-openid_claims = []
+oidc_issuer_url = "https://accounts.example.com"
+oidc_client_id = ""
+oidc_client_secret = ""
+oidc_claims = []
+# Should an account be created if SSO user id doesn't exist already
+oidc_create_account = true
 
 [smtp]
 # TODO: 
