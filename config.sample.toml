@@ -17,5 +17,7 @@ openid_enabled = true
 openid_issuer_url = "https://accounts.example.com"
 openid_client_id = ""
 openid_client_secret = ""
+openid_claims = []
+
 [smtp]
 # TODO: 

@@ -3,24 +3,36 @@ use std::net::IpAddr;
 use std::sync::{LazyLock, OnceLock};
 use std::time::Duration;
 use anyhow::anyhow;
+use log::warn;
 use moka::future::Cache;
 use rocket::{get, post, uri};
 use rocket::response::Redirect;
 use rocket_session_store::Session;
 use crate::guards::AuthUser;
 use crate::SessionData;
-use openidconnect::{reqwest, AccessTokenHash, AuthenticationFlow, AuthorizationCode, Client, ClientId, ClientSecret, CsrfToken, EmptyAdditionalClaims, HttpClientError, IssuerUrl, Nonce, OAuth2TokenResponse, PkceCodeChallenge, PkceCodeVerifier, ProviderMetadata, RedirectUrl, Scope, StandardErrorResponse, TokenResponse};
+use openidconnect::{reqwest, AccessTokenHash, AsyncHttpClient, AuthenticationFlow, AuthorizationCode, Client, ClientId, ClientSecret, CsrfToken, EmptyAdditionalClaims, HttpClientError, IssuerUrl, Nonce, OAuth2TokenResponse, PkceCodeChallenge, PkceCodeVerifier, ProviderMetadata, RedirectUrl, Scope, StandardErrorResponse, TokenResponse};
 use openidconnect::core::{CoreAuthDisplay, CoreAuthPrompt, CoreAuthenticationFlow, CoreClient, CoreGenderClaim, CoreJsonWebKey, CoreJweContentEncryptionAlgorithm, CoreProviderMetadata, CoreTokenResponse, CoreUserInfoClaims};
-
+use openidconnect::http::HeaderValue;
+use reqwest::header::HeaderMap;
 // TODO: not have this lazy somehow, move to OnceLock and have fn to refresh it? (own module?)
 // and/or also move to State<>
 
 static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    reqwest::ClientBuilder::new()
+    let mut headers = HeaderMap::new();
+    // TODO: pull from config.
+    // Set referrer as some providers (authentik) block POST w/o referrer
+    headers.insert("Referer", HeaderValue::from_static("http://localhost:8080"));
+    let mut builder = reqwest::ClientBuilder::new()
         // Following redirects opens the client up to SSRF vulnerabilities.
         .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .expect("Client should build")
+        .default_headers(headers);
+    if var("DANGER_DEV_PROXY").is_ok() {
+        warn!("DANGER_DEV_PROXY set, requests are being proxied & ignoring certificates");
+        builder = builder
+            .proxy(reqwest::Proxy::https("https://localhost:8082").unwrap())
+            .danger_accept_invalid_certs(true)
+    };
+    builder.build().expect("Client should build")
 });
 #[derive(Clone)]
 struct SSOSessionData {
@@ -34,15 +46,14 @@ static SSO_SESSION_CACHE: LazyLock<Cache<IpAddr, SSOSessionData>> = LazyLock::ne
     .max_capacity(100)
     .build());
 #[get("/auth/sso")]
-pub async fn page(session: Session<'_, SessionData>, ip: IpAddr) -> Redirect {
-    let s = session.get().await.unwrap().unwrap();
+pub async fn page(ip: IpAddr) -> Redirect {
     let http_client = HTTP_CLIENT.clone();
     // FIXME: temp, remove
     let provider_metadata = CoreProviderMetadata::discover_async(
         /* TODO: pull from config */
         IssuerUrl::new(var("SSO_ISSUER_URL").expect("dev: missing sso url")).expect("bad issuer url"),
         &http_client,
-    ).await.expect("discovery failed");
+    ).await.map_err(|e| e.to_string()).expect("discovery failed");
     let client =
         CoreClient::from_provider_metadata(
             provider_metadata,
@@ -65,8 +76,8 @@ pub async fn page(session: Session<'_, SessionData>, ip: IpAddr) -> Redirect {
         )
         // Set the desired scopes.
         // TODO: change scopes
-        .add_scope(Scope::new("read".to_string()))
-        .add_scope(Scope::new("write".to_string()))
+        .add_scope(Scope::new("email".to_string()))
+        .add_scope(Scope::new("name".to_string()))
         // Set the PKCE code challenge.
         .set_pkce_challenge(pkce_challenge)
         .url();
@@ -82,7 +93,7 @@ pub async fn page(session: Session<'_, SessionData>, ip: IpAddr) -> Redirect {
     // process.
 }
 
-#[post("/auth/sso/cb?<state>&<code>")]
+#[get("/auth/sso/cb?<code>&<state>")]
 pub async fn callback(session: Session<'_, SessionData>, ip: IpAddr, code: String, state: String) -> Result<String, String> {
     let session_data = SSO_SESSION_CACHE.remove(&ip).await.ok_or_else(|| "no sso session started".to_string())?;
     // Now you can exchange it for an access token and ID token.
