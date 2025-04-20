@@ -46,6 +46,13 @@ pub async fn list_library_files(
     sort_dir: Option<String>,
     display: Option<String>,
 ) -> Result<Template, ResponseError> {
+    let options = FileDisplayOptions {
+        // TODO: prevent bad values
+        // TODO: fix login errror msg -------_____------
+        sort_key: validate_option(sort_key, FILE_CONSTANTS.sort_keys, "name"),
+        sort_dir: validate_option(sort_dir, &["asc", "desc"], "asc"),
+        display: validate_option(display, FILE_CONSTANTS.display_options, "list"),
+    };
     let libs = libraries.lock().await;
     let library = libs.get(library_id).await?;
     let files = library.list_files(&PathBuf::from(&path)).await
@@ -82,13 +89,7 @@ pub async fn list_library_files(
         parent,
         path_segments: segments,
         // TODO: have struct?
-        options: FileDisplayOptions {
-            // TODO: prevent bad values
-            // TODO: fix login errror msg -------_____------
-            sort_key: validate_option(sort_key, FILE_CONSTANTS.sort_keys, "name"),
-            sort_dir: validate_option(sort_dir, &["asc", "desc"], "asc"),
-            display: validate_option(display, FILE_CONSTANTS.display_options, "list"),
-        },
+        options,
         DATA: FILE_CONSTANTS
     }))
 }
