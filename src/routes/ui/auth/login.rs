@@ -90,7 +90,7 @@ pub async fn handler(
     let ctx = context! {
         route: route.uri.path(),
         csrf_token: csrf_token,
-        form: &Context::default(),
+        form: &form.context,
         return_to,
         meta: meta.inner()
     };
