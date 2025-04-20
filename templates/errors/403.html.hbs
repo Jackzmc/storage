@@ -1,0 +1,26 @@
+{{#> layouts/default body-class="has-background-white-ter login-bg" }}
+    <br><br>
+    <div class="container py-6" style="width:20%"> <!-- TODO: fix width on mobile -->
+        <h1 class="title is-1 has-text-centered">storage-app</h1>
+        <div class="box is-radiusless">
+            <h4 class="title is-4 has-text-centered">403 Forbidden</h4>
+            <p>You do not have permission to view the resource at <code></code></p>
+
+            <br>
+            <!-- Hide go back unless javascript enabled -->
+            <p><span id="backlink" style="display:none"><a href="">Go Back</a> | </span><a href="/">Return home</a></p>
+        </div>
+    </div>
+{{/layouts/default}}
+
+<script>
+// Enable 'go back' link:
+const element = document.querySelector('#backlink');
+element.style.display = "inline"
+const elementLink = document.querySelector('#backlink a');
+elementLink.setAttribute('href', document.referrer);
+elementLink.onclick = function() {
+    history.back();
+    return false;
+}
+</script>

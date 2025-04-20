@@ -152,11 +152,14 @@ async fn rocket() -> _ {
             ui::help::about,
             ui::help::test_get
         ])
+        .mount("/admin", routes![
+            ui::admin::index
+        ])
         .register("/api", catchers![
             not_found_api,
         ])
         .register("/", catchers![
-            not_found, not_authorized
+            not_found, not_authorized, forbidden
         ])
 }
 
@@ -164,6 +167,13 @@ async fn rocket() -> _ {
 pub fn not_authorized(req: &Request) -> Redirect {
     // TODO: do uri!()
     Redirect::to(format!("/auth/login?return_to={}", req.uri().path().percent_encode()))
+}
+
+#[catch(403)]
+pub fn forbidden(req: &Request) -> Template {
+   Template::render("errors/403", context! {
+
+   })
 }
 
 #[catch(404)]
