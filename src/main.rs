@@ -24,7 +24,7 @@ use crate::managers::repos::RepoManager;
 use crate::objs::library::Library;
 use crate::util::{setup_logger, JsonErrorResponse, ResponseError};
 use routes::api;
-use crate::consts::{SESSION_COOKIE_NAME, SESSION_LIFETIME_SECONDS};
+use crate::consts::{init_statics, SESSION_COOKIE_NAME, SESSION_LIFETIME_SECONDS};
 use crate::models::user::UserModel;
 use crate::routes::ui;
 
@@ -70,6 +70,7 @@ pub struct GlobalMetadata {
 async fn rocket() -> _ {
     setup_logger();
     dotenvy::dotenv().ok();
+    init_statics();
 
     trace!("trace");
     debug!("debug");

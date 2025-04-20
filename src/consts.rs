@@ -1,4 +1,6 @@
 use std::cell::OnceCell;
+use std::env;
+use std::sync::OnceLock;
 use std::time::Duration;
 use rocket::data::ByteUnit;
 use rocket::serde::Serialize;
@@ -14,7 +16,6 @@ pub const SESSION_LIFETIME_SECONDS: u64 = 3600 * 24 * 14; // 14 days
 pub const SESSION_COOKIE_NAME: &'static str = "storage-session";
 
 
-
 #[derive(Serialize)]
 pub struct FileConstants<'a> {
     pub display_options: &'a[&'a str],
@@ -25,3 +26,10 @@ pub const FILE_CONSTANTS: FileConstants = FileConstants {
     sort_keys: &["name", "last_modified", "size"],
 };
 
+
+/// Disables CSRF & password verification for login
+/// Used for development due to no session persistence
+pub static DISABLE_LOGIN_CHECK: OnceLock<bool> = OnceLock::new();
+pub fn init_statics() {
+    DISABLE_LOGIN_CHECK.set(env::var("DANGER_DISABLE_LOGIN_CHECKS").is_ok()).unwrap();
+}

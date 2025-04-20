@@ -6,6 +6,7 @@ use rocket::http::{Header, Status};
 use rocket_dyn_templates::{context, Template};
 use rocket_session_store::Session;
 use crate::{GlobalMetadata, LoginSessionData, SessionData, DB};
+use crate::consts::DISABLE_LOGIN_CHECK;
 use crate::models::user::validate_user_form;
 use crate::util::{set_csrf, validate_csrf_form};
 
@@ -60,7 +61,9 @@ pub async fn handler(
     return_to: Option<String>,
 ) -> Result<HackyRedirectBecauseRocketBug, Template> {
     trace!("handler");
-    validate_csrf_form(&mut form.context, &session).await;
+    if !DISABLE_LOGIN_CHECK.get().unwrap() {
+        validate_csrf_form(&mut form.context, &session).await;
+    }
     let user = validate_user_form(&mut form.context, &pool).await;
     trace!("check form");
     if form.context.status() == Status::Ok {

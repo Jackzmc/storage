@@ -10,7 +10,7 @@ use rocket::response::Responder;
 use rocket::serde::Serialize;
 use rocket::serde::uuid::Uuid;
 use sqlx::{query_as, FromRow};
-use crate::consts::ENCRYPTION_ROUNDS;
+use crate::consts::{DISABLE_LOGIN_CHECK, ENCRYPTION_ROUNDS};
 use crate::{LoginSessionData, SessionData, DB};
 use crate::models::repo::RepoModel;
 use crate::util::JsonErrorResponse;
@@ -124,7 +124,7 @@ pub async fn validate_user(pool: &DB, email_or_usrname: &str, password: &str) ->
         return Err(UserAuthError::UserNotFound);
     };
     if let Some(db_password) = user.password {
-        if bcrypt::verify(password, &db_password).map_err(|e| UserAuthError::EncryptionError(e))? {
+        if !DISABLE_LOGIN_CHECK.get().unwrap() || bcrypt::verify(password, &db_password).map_err(|e| UserAuthError::EncryptionError(e))? {
             return Ok(UserModel {
                 id: user.id,
                 email: user.email,
