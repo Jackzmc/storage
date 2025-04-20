@@ -144,6 +144,7 @@ async fn rocket() -> _ {
         .mount("/", routes![
             ui::auth::logout,
             ui::auth::login::page, ui::auth::login::handler, ui::auth::register::page, ui::auth::register::handler,
+            ui::auth::sso::page, ui::auth::sso::callback,
             ui::auth::forgot_password::page, ui::auth::forgot_password::handler,
         ])
         .mount("/", routes![

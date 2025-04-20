@@ -20,6 +20,8 @@ pub mod forgot_password;
 pub mod login;
 pub mod register;
 
+pub mod sso;
+
 #[get("/logout")]
 pub async fn logout(session: Session<'_, SessionData>, user: AuthUser) -> Redirect {
     session.remove().await.unwrap();

@@ -61,7 +61,7 @@ pub async fn handler(
     return_to: Option<String>,
 ) -> Result<HackyRedirectBecauseRocketBug, Template> {
     trace!("handler");
-    if !DISABLE_LOGIN_CHECK.get().unwrap() {
+    if !*DISABLE_LOGIN_CHECK {
         validate_csrf_form(&mut form.context, &session).await;
     }
     let user = validate_user_form(&mut form.context, &pool).await;

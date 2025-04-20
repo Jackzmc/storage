@@ -1,6 +1,11 @@
 [general]
 listen_ip = "0.0.0.0"
 listen_port = 80
+# if under reverse proxy
+#public_url = "https://storage.example.com"
+#public_port = 443
+public_url = "http://localhost:8080"
+public_port = 80
 
 [backends.local]
 path = "/var/tmp/test"

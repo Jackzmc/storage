@@ -1,6 +1,6 @@
 use std::cell::OnceCell;
 use std::env;
-use std::sync::OnceLock;
+use std::sync::{LazyLock, OnceLock};
 use std::time::Duration;
 use rocket::data::ByteUnit;
 use rocket::serde::Serialize;
@@ -29,7 +29,8 @@ pub const FILE_CONSTANTS: FileConstants = FileConstants {
 
 /// Disables CSRF & password verification for login
 /// Used for development due to no session persistence
-pub static DISABLE_LOGIN_CHECK: OnceLock<bool> = OnceLock::new();
+pub static DISABLE_LOGIN_CHECK: LazyLock<bool> = LazyLock::new(|| {
+    env::var("DANGER_DISABLE_LOGIN_CHECKS").is_ok()
+});
 pub fn init_statics() {
-    DISABLE_LOGIN_CHECK.set(env::var("DANGER_DISABLE_LOGIN_CHECKS").is_ok()).unwrap();
 }

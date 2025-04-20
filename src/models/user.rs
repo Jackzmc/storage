@@ -124,7 +124,7 @@ pub async fn validate_user(pool: &DB, email_or_usrname: &str, password: &str) ->
         return Err(UserAuthError::UserNotFound);
     };
     if let Some(db_password) = user.password {
-        if !DISABLE_LOGIN_CHECK.get().unwrap() || bcrypt::verify(password, &db_password).map_err(|e| UserAuthError::EncryptionError(e))? {
+        if !*DISABLE_LOGIN_CHECK || bcrypt::verify(password, &db_password).map_err(|e| UserAuthError::EncryptionError(e))? {
             return Ok(UserModel {
                 id: user.id,
                 email: user.email,
