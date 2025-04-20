@@ -21,7 +21,10 @@ use crate::objs::library::ListOptions;
 use crate::routes::ui::auth;
 use crate::util::{JsonErrorResponse, ResponseError};
 
-
+#[get("/settings")]
+pub async fn user_settings(user: AuthUser, route: &Route) -> Template {
+    Template::render("settings", context! { session: user.session, route: route.uri.path() })
+}
 #[get("/")]
 pub async fn index(user: AuthUser, route: &Route) -> Template {
     Template::render("index", context! { session: user.session, route: route.uri.path(), test: "value" })

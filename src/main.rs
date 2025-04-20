@@ -39,6 +39,7 @@ mod objs;
 mod helpers;
 mod consts;
 mod guards;
+mod config;
 
 pub type DB = Pool<Postgres>;
 
@@ -145,7 +146,7 @@ async fn rocket() -> _ {
             ui::auth::forgot_password::page, ui::auth::forgot_password::handler,
         ])
         .mount("/", routes![
-            ui::user::index, ui::user::redirect_list_library_files, ui::user::list_library_files, ui::user::get_library_file,
+            ui::user::user_settings, ui::user::index, ui::user::redirect_list_library_files, ui::user::list_library_files, ui::user::get_library_file,
         ])
         .mount("/", routes![
             ui::help::about,

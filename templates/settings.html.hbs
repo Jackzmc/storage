@@ -1,0 +1,92 @@
+{{#> layouts/main body-class="" }}
+<div class="columns">
+    <div class="column">
+        <div class="box is-radiusless" id="account">
+            <h4 class="title is-4 has-text-link">Account Settings</h4>
+            <form method="post" action="/settings/account">
+                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+                <div class="field">
+                    <label class="label">Name</label>
+                    <div class="control has-icons-left">
+                        <input autofocus required name="username" value="{{ session.user.name }}"
+                            class="input {{#if errors.name}}is-danger{{/if}}" type="text" placeholder="Name">
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-user"></i>
+                        </span>
+                    </div>
+                    {{#if errors.name }}
+                        <p class="help is-danger">{{errors.name}}</p>
+                    {{/if}}
+                </div>
+                <div class="field">
+                    <label class="label">Password</label>
+                    <div class="control">
+                       <a class="button is-small">Reset password</a>
+                    </div>
+                </div>
+                <br>
+                <div class="buttons">
+                    <button class="button is-success" type="submit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+        <div class="box is-radiusless" id="account">
+            <h4 class="title is-4 has-text-link">UI Preferences</h4>
+            <form method="post" action="/settings/ui">
+                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+                <div class="field">
+                    <label class="label">Language</label>
+                    <div class="control">
+                        <div class="select">
+                            <select>
+                                <option selected value="en-us">English</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <div class="buttons">
+                    <button class="button is-success" type="submit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+        <div class="box is-radiusless" id="sessions">
+            <h4 class="title is-4 has-text-link">Active Sessions</h4>
+            <table class="table is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>IP</th>
+                        <th>Location</th>
+                        <th>Last Active</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>UUID</td>
+                        <td>IP</td>
+                        <td>Location</td>
+                        <td>Now</td>
+                        <td><em>current</em></td>
+                    </tr>
+                </tb>
+            </table>
+            <br>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box">
+            <aside class="sidebar pl-0 mb-0">
+                <p class="sidebar-header">Sections</p>
+                <ul class="sidebar-list mb-0">
+                    <li><a href="#account"><i class="fa fa-user"></i>Account</a></li>
+                    <li><a href="#ui"><i class="fa fa-cog"></i>UI Preferences</a></li>
+                    <li><a href="#sessions"><i class="fa fa-laptop"></i>Active Sessions</a></li>
+                </ul>
+            </aside>
+
+        </div>
+    </div>
+</div>
+{{/layouts/main}}
