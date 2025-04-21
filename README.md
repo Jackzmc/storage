@@ -61,9 +61,10 @@ Rough roadmap in a rough order of priority
   * [ ] Individual email actions
 * [ ] SSO Support (openid)
   * [x] Basic implementation
-  * [ ] User mapping
-  * [ ] User creation
+  * [x] User mapping
+  * [x] User creation
   * [ ] User logout
+* [ ] Normal user registration (email/username+pass)
 * [ ] S3 backend support
 * [ ] Administration panel
   * [ ] Add storage backends
