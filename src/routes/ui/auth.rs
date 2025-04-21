@@ -22,9 +22,17 @@ pub mod register;
 
 pub mod sso;
 
+#[derive(Responder)]
+#[response(status = 302)]
+struct HackyRedirectBecauseRocketBug {
+    inner: String,
+    location: Header<'static>,
+}
+
 #[get("/logout")]
 pub async fn logout(session: Session<'_, SessionData>, user: AuthUser) -> Redirect {
     session.remove().await.unwrap();
     Redirect::to(uri!(login::page(_, Some(true))))
 }
+
 

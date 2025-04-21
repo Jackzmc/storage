@@ -3,13 +3,13 @@ use rocket::form::{Context, Contextual, Form};
 use rocket_dyn_templates::{context, Template};
 use rocket_session_store::Session;
 use crate::{GlobalMetadata, SessionData};
+use crate::consts::APP_METADATA;
 use crate::util::set_csrf;
 
 #[get("/auth/forgot-password?<return_to>")]
 pub async fn page(
     route: &Route,
     session: Session<'_, SessionData>,
-    meta: &State<GlobalMetadata>,
     return_to: Option<String>,
 ) -> Template {
     // TODO: redirect if already logged in
@@ -19,7 +19,7 @@ pub async fn page(
         csrf_token: csrf_token,
         form: &Context::default(),
         return_to,
-        meta: meta.inner()
+        meta: APP_METADATA.clone()
     })
 }
 

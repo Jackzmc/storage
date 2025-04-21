@@ -6,15 +6,15 @@ use rocket::http::{Header, Status};
 use rocket_dyn_templates::{context, Template};
 use rocket_session_store::Session;
 use crate::{GlobalMetadata, LoginSessionData, SessionData, DB};
-use crate::consts::DISABLE_LOGIN_CHECK;
+use crate::consts::{APP_METADATA, DISABLE_LOGIN_CHECK};
 use crate::models::user::validate_user_form;
+use crate::routes::ui::auth::HackyRedirectBecauseRocketBug;
 use crate::util::{set_csrf, validate_csrf_form};
 
 #[get("/auth/login?<return_to>&<logged_out>")]
 pub async fn page(
     route: &Route,
     session: Session<'_, SessionData>,
-    meta: &State<GlobalMetadata>,
     return_to: Option<String>,
     logged_out: Option<bool>
 ) -> Template {
@@ -26,7 +26,7 @@ pub async fn page(
         form: &Context::default(),
         return_to,
         logged_out,
-        meta: meta.inner()
+        meta: APP_METADATA.clone()
     })
 }
 
@@ -43,20 +43,12 @@ struct LoginForm<'r> {
 }
 
 
-#[derive(Responder)]
-#[response(status = 302)]
-struct HackyRedirectBecauseRocketBug {
-    inner: String,
-    location: Header<'static>,
-}
-
 #[post("/auth/login?<return_to>", data = "<form>")]
 pub async fn handler(
     pool: &State<DB>,
     route: &Route,
     ip_addr: IpAddr,
     session: Session<'_, SessionData>,
-    meta: &State<GlobalMetadata>,
     mut form: Form<Contextual<'_, LoginForm<'_>>>,
     return_to: Option<String>,
 ) -> Result<HackyRedirectBecauseRocketBug, Template> {
@@ -95,7 +87,7 @@ pub async fn handler(
         csrf_token: csrf_token,
         form: &form.context,
         return_to,
-        meta: meta.inner()
+        meta: APP_METADATA.clone()
     };
     Err(Template::render("auth/login", &ctx))
 }

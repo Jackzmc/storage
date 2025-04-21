@@ -2,10 +2,10 @@ use std::env::var;
 use std::net::IpAddr;
 use std::sync::{LazyLock, OnceLock};
 use std::time::Duration;
-use anyhow::anyhow;
-use log::warn;
+use anyhow::{anyhow, Error};
+use log::{debug, warn};
 use moka::future::Cache;
-use rocket::{get, post, uri};
+use rocket::{get, post, uri, State};
 use rocket::response::Redirect;
 use rocket_session_store::Session;
 use crate::guards::AuthUser;
@@ -14,60 +14,16 @@ use openidconnect::{reqwest, AccessTokenHash, AsyncHttpClient, AuthenticationFlo
 use openidconnect::core::{CoreAuthDisplay, CoreAuthPrompt, CoreAuthenticationFlow, CoreClient, CoreGenderClaim, CoreJsonWebKey, CoreJweContentEncryptionAlgorithm, CoreProviderMetadata, CoreTokenResponse, CoreUserInfoClaims};
 use openidconnect::http::HeaderValue;
 use reqwest::header::HeaderMap;
-// TODO: not have this lazy somehow, move to OnceLock and have fn to refresh it? (own module?)
-// and/or also move to State<>
+use rocket::http::{Header, Status};
+use rocket_dyn_templates::{context, Template};
+use tokio::sync::MutexGuard;
+use crate::managers::sso::{SSOSessionData, SSOState, SSO};
+use crate::routes::ui::auth::HackyRedirectBecauseRocketBug;
 
-static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    let mut headers = HeaderMap::new();
-    // TODO: pull from config.
-    // Set referrer as some providers (authentik) block POST w/o referrer
-    headers.insert("Referer", HeaderValue::from_static("http://localhost:8080"));
-    let mut builder = reqwest::ClientBuilder::new()
-        // Following redirects opens the client up to SSRF vulnerabilities.
-        .redirect(reqwest::redirect::Policy::none())
-        .default_headers(headers);
-    if var("DANGER_DEV_PROXY").is_ok() {
-        warn!("DANGER_DEV_PROXY set, requests are being proxied & ignoring certificates");
-        builder = builder
-            .proxy(reqwest::Proxy::https("https://localhost:8082").unwrap())
-            .danger_accept_invalid_certs(true)
-    };
-    builder.build().expect("Client should build")
-});
-#[derive(Clone)]
-struct SSOSessionData {
-    pkce_challenge: String,
-    nonce: Nonce,
-    csrf_token: CsrfToken
-    // ip: IpAddr,
-}
-static SSO_SESSION_CACHE: LazyLock<Cache<IpAddr, SSOSessionData>> = LazyLock::new(|| Cache::builder()
-    .time_to_live(Duration::from_secs(120))
-    .max_capacity(100)
-    .build());
-#[get("/auth/sso")]
-pub async fn page(ip: IpAddr) -> Redirect {
-    let http_client = HTTP_CLIENT.clone();
-    // FIXME: temp, remove
-    let provider_metadata = CoreProviderMetadata::discover_async(
-        /* TODO: pull from config */
-        IssuerUrl::new(var("SSO_ISSUER_URL").expect("dev: missing sso url")).expect("bad issuer url"),
-        &http_client,
-    ).await.map_err(|e| e.to_string()).expect("discovery failed");
-    let client =
-        CoreClient::from_provider_metadata(
-            provider_metadata,
-            // TODO: pull from config
-            ClientId::new(var("SSO_CLIENT_ID").expect("dev: sso client id missing")),
-            Some(ClientSecret::new(var("SSO_CLIENT_SECRET").expect("dev sso client secret missing")
-                .to_string())),
-        ).set_redirect_uri(RedirectUrl::new("http://localhost:8080/auth/sso/cb".to_string()).unwrap());
-
-    // Generate a PKCE challenge.
-    // TODO: store in hashmap for request ip? leaky bucket?
+async fn page_handler(sso: &State<SSOState>, ip: IpAddr, return_to: Option<String>) -> Result<Redirect, anyhow::Error> {
+    let mut sso = sso.as_ref().ok_or_else(|| anyhow!("SSO is not configured"))?.lock().await;
+    let client = sso.create_client_redirect().await?;
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
-
-    // Generate the full authorization URL.
     let (auth_url, csrf_token, nonce) = client
         .authorize_url(
             CoreAuthenticationFlow::AuthorizationCode,
@@ -75,82 +31,59 @@ pub async fn page(ip: IpAddr) -> Redirect {
             Nonce::new_random,
         )
         // Set the desired scopes.
-        // TODO: change scopes
-        .add_scope(Scope::new("email".to_string()))
-        .add_scope(Scope::new("name".to_string()))
+        .add_scopes(sso.scopes())
         // Set the PKCE code challenge.
         .set_pkce_challenge(pkce_challenge)
         .url();
-    SSO_SESSION_CACHE.insert(ip, SSOSessionData {
+    sso.cache_set(ip, SSOSessionData {
         nonce: nonce,
         pkce_challenge: pkce_verifier.into_secret(),
-        csrf_token
+        csrf_token,
+        return_to
     }).await;
-
-    Redirect::to(auth_url.to_string())
-
-    // This is the URL you should redirect the user to, in order to trigger the authorization
-    // process.
+    Ok(Redirect::to(auth_url.to_string()))
+}
+#[get("/auth/sso?<return_to>")]
+pub async fn page(ip: IpAddr, sso: &State<SSOState>, return_to: Option<String>) -> Result<Redirect, (Status, Template)> {
+    page_handler(sso, ip, return_to).await
+        .map_err(|e| (Status::InternalServerError, Template::render("errors/500", context! {
+                error: e.to_string()
+            })))
 }
 
-#[get("/auth/sso/cb?<code>&<state>")]
-pub async fn callback(session: Session<'_, SessionData>, ip: IpAddr, code: String, state: String) -> Result<String, String> {
-    let session_data = SSO_SESSION_CACHE.remove(&ip).await.ok_or_else(|| "no sso session started".to_string())?;
-    // Now you can exchange it for an access token and ID token.
-    if &state != session_data.csrf_token.secret() {
-        return Err(format!("csrf validation failed {}", state));
+async fn callback_handler(sso: &State<SSOState>, ip: IpAddr, code: String, state: String) -> Result<(CoreUserInfoClaims, Option<String>), anyhow::Error> {
+    let mut sso = sso.as_ref().ok_or_else(||anyhow!("SSO is not configured"))?.lock().await;
+    let sess_data = sso.cache_take(ip).await.ok_or_else(|| anyhow!("No valid sso started"))?;
+    if &state != sess_data.csrf_token.secret() {
+        return Err(anyhow!("CSRF verification failed"));
     }
-
-    // FIXME: temp, remove
-    let http_client = HTTP_CLIENT.clone();
-    let provider_metadata = CoreProviderMetadata::discover_async(
-        /* TODO: pull from config */
-        IssuerUrl::new(var("SSO_ISSUER_URL").expect("dev: missing sso url")).expect("bad issuer url"),
-        &http_client,
-    ).await.expect("discovery failed");
-    let client =
-        CoreClient::from_provider_metadata(
-            provider_metadata,
-            // TODO: pull from config
-            ClientId::new(var("SSO_CLIENT_ID").expect("dev: sso client id missing")),
-            Some(ClientSecret::new(var("SSO_CLIENT_SECRET").expect("dev sso client secret missing")
-                .to_string())),
-        ).set_redirect_uri(RedirectUrl::new("http://localhost:8080/auth/sso/cb".to_string()).unwrap());
-
+    let client = sso.create_client_redirect().await?;
     let token_response =
         client
-            .exchange_code(AuthorizationCode::new(code)).expect("bad auth code")
+            .exchange_code(AuthorizationCode::new(code)).map_err(|e| anyhow!("oidc code is invalid"))?
             // Set the PKCE code verifier.
-            .set_pkce_verifier(PkceCodeVerifier::new(session_data.pkce_challenge)) // TODO: somehow have this??
-            .request_async(&http_client).await.expect("token exchange error");
+            .set_pkce_verifier(PkceCodeVerifier::new(sess_data.pkce_challenge)) // TODO: somehow have this??
+            .request_async(sso.http_client()).await
+                .map_err(|e| anyhow!("OIDC Token exchange error"))?;
 
     // Extract the ID token claims after verifying its authenticity and nonce.
     let id_token = token_response
         .id_token()
-        .ok_or_else(|| "Server did not return an ID token".to_string())?;
+        .ok_or_else(|| anyhow!("Server did not return an ID token"))?;
     let id_token_verifier = client.id_token_verifier();
-    let claims = id_token.claims(&id_token_verifier, &session_data.nonce).expect("bad claims"); // TODO: and this?
+    let claims = id_token.claims(&id_token_verifier, &sess_data.nonce).map_err(|e| anyhow!("OIDC Token claims error: {}", e))?;
 
-    // Verify the access token hash to ensure that the access token hasn't been substituted for
-    // another user's.
+    // Verify the access token hash to ensure that the access token hasn't been substituted for another user's.
     if let Some(expected_access_token_hash) = claims.access_token_hash() {
         let actual_access_token_hash = AccessTokenHash::from_token(
             token_response.access_token(),
-            id_token.signing_alg().expect("signing failed (alg)"),
-            id_token.signing_key(&id_token_verifier).expect("signing failed (key)"),
+            id_token.signing_alg().map_err(|e| anyhow!("OIDC token signature error: {}", e))?,
+            id_token.signing_key(&id_token_verifier).map_err(|e| anyhow!("OIDC token signature error: {}", e))?
         ).expect("access token resolve error");
         if actual_access_token_hash != *expected_access_token_hash {
-            return Err("Invalid access token".to_string());
+            return Err(anyhow!("Invalid access token"))
         }
     }
-
-    // The authenticated user's identity is now available. See the IdTokenClaims struct for a
-    // complete listing of the available claims.
-    println!(
-        "User {} with e-mail address {} has authenticated successfully",
-        claims.subject().as_str(),
-        claims.email().map(|email| email.as_str()).unwrap_or("<not provided>"),
-    );
 
     // If available, we can use the user info endpoint to request additional information.
 
@@ -158,9 +91,23 @@ pub async fn callback(session: Session<'_, SessionData>, ip: IpAddr, code: Strin
     // claims, use UserInfoClaims directly (with the desired type parameters) rather than using the
     // CoreUserInfoClaims type alias.
     let userinfo: CoreUserInfoClaims = client
-        .user_info(token_response.access_token().to_owned(), None).expect("user info missing")
-        .request_async(&http_client)
+        .user_info(token_response.access_token().to_owned(), None).map_err(|_| anyhow!("could not acquire user data"))?
+        .request_async(sso.http_client())
         .await
-        .map_err(|err| format!("Failed requesting user info: {}", err))?;
-    Ok(format!("user={:?}\nemail={:?}\nname={:?}", userinfo.subject(), userinfo.email(), userinfo.name()))
+        .map_err(|_| anyhow!("could not acquire user data"))?;
+    Ok((userinfo, sess_data.return_to))
+}
+
+#[get("/auth/sso/cb?<code>&<state>")]
+pub async fn callback(session: Session<'_, SessionData>, ip: IpAddr, sso: &State<SSOState>, code: String, state: String) -> Result<HackyRedirectBecauseRocketBug, (Status, Template)> {
+    let (userinfo, return_to) = callback_handler(sso, ip, code, state).await
+        .map_err(|e| (Status::InternalServerError, Template::render("errors/500", context! {
+                error: e.to_string()
+            })))?;
+    debug!("user={:?}\nemail={:?}\nname={:?}", userinfo.subject(), userinfo.email(), userinfo.name());
+    let return_to = return_to.unwrap_or("/".to_string());
+    Ok(HackyRedirectBecauseRocketBug {
+        inner: "Login successful, redirecting...".to_string(),
+        location: Header::new("Location", return_to),
+    })
 }

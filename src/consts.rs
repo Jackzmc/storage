@@ -4,6 +4,7 @@ use std::sync::{LazyLock, OnceLock};
 use std::time::Duration;
 use rocket::data::ByteUnit;
 use rocket::serde::Serialize;
+use crate::GlobalMetadata;
 
 /// The maximum amount of bytes that can be uploaded at once
 pub const MAX_UPLOAD_SIZE: ByteUnit = ByteUnit::Mebibyte(100_000);
@@ -31,6 +32,13 @@ pub const FILE_CONSTANTS: FileConstants = FileConstants {
 /// Used for development due to no session persistence
 pub static DISABLE_LOGIN_CHECK: LazyLock<bool> = LazyLock::new(|| {
     env::var("DANGER_DISABLE_LOGIN_CHECKS").is_ok()
+});
+pub static APP_METADATA: LazyLock<GlobalMetadata> = LazyLock::new(|| {
+    GlobalMetadata {
+        app_name: env!("CARGO_PKG_NAME").to_string(),
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+        repo_url: env!("CARGO_PKG_REPOSITORY").to_string(),
+    }
 });
 pub fn init_statics() {
 }

@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::Cursor;
+use std::time::Duration;
 use log::trace;
 use rand::rngs::OsRng;
 use rand::{rng, Rng, TryRngCore};
@@ -9,14 +10,18 @@ use rocket::{form, response, Request, Response};
 use rocket::form::Context;
 use rocket::form::error::Entity;
 use rocket::fs::relative;
+use rocket::http::private::cookie::CookieBuilder;
 use rocket::response::Responder;
 use rocket::serde::Serialize;
 use rocket_dyn_templates::handlebars::Handlebars;
-use rocket_session_store::{Session, SessionError, SessionResult};
-use sqlx::Error;
+use rocket_session_store::{Session, SessionError, SessionResult, SessionStore};
+use rocket_session_store::memory::MemoryStore;
+use sqlx::{migrate, Error, Pool, Postgres};
+use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use uuid::Uuid;
+use crate::consts::{SESSION_COOKIE_NAME, SESSION_LIFETIME_SECONDS};
 use crate::models::user::{UserAuthError,};
 use crate::SessionData;
 use crate::util::ResponseError::DatabaseError;
@@ -29,6 +34,35 @@ pub(crate) fn setup_logger() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+}
+
+pub async fn setup_db() -> Pool<Postgres> {
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(std::env::var("DATABASE_URL").unwrap().as_str())
+        .await
+        .unwrap();
+
+    migrate!("./migrations")
+        .run(&pool)
+        .await.unwrap();
+    pool
+}
+
+pub fn setup_session_store() -> SessionStore<SessionData> {
+    let memory_store: MemoryStore::<SessionData> = MemoryStore::default();
+    SessionStore {
+        store: Box::new(memory_store),
+        name: SESSION_COOKIE_NAME.into(),
+        duration: Duration::from_secs(SESSION_LIFETIME_SECONDS),
+        // The cookie builder is used to set the cookie's path and other options.
+        // Name and value don't matter, they'll be overridden on each request.
+        cookie_builder: CookieBuilder::new("", "")
+            // Most web apps will want to use "/", but if your app is served from
+            // `example.com/myapp/` for example you may want to use "/myapp/" (note the trailing
+            // slash which prevents the cookie from being sent for `example.com/myapp2/`).
+            .path("/")
+    }
 }
 
 pub async fn set_csrf(session: &Session<'_, SessionData>) -> String {
@@ -71,26 +105,6 @@ pub fn gen_csrf_token() -> String {
         .take(30)
         .collect()
 }
-
-// pub(crate) fn setup_template_engine() -> Handlebars<'static> {
-//     let mut hb = Handlebars::new();
-//     #[cfg(debug_assertions)]
-//     hb.set_dev_mode(true);
-//
-//     let templates = fs::read_dir(relative!("templates")).unwrap();
-//     let mut ok = true;
-//     for file in templates {
-//         let file = file.unwrap();
-//         if let Err(e) = hb.register_template_file(file.path().to_str().unwrap(), ) {
-//             error!(template, path = %path.display(),
-//                     "failed to register Handlebars template: {e}");
-//
-//             ok = false;
-//         }
-//     }
-//
-// hb
-// }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct JsonErrorResponse {

@@ -1,4 +1,4 @@
-use std::net::IpAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 use log::{debug, error, info, trace, warn};
@@ -22,9 +22,11 @@ use tracing_subscriber::fmt::writer::MakeWriterExt;
 use crate::managers::libraries::LibraryManager;
 use crate::managers::repos::RepoManager;
 use crate::objs::library::Library;
-use crate::util::{setup_logger, JsonErrorResponse, ResponseError};
+use crate::util::{setup_db, setup_logger, setup_session_store, JsonErrorResponse, ResponseError};
 use routes::api;
+use crate::config::{get_settings, AppConfig};
 use crate::consts::{init_statics, SESSION_COOKIE_NAME, SESSION_LIFETIME_SECONDS};
+use crate::managers::sso::{SSOState, SSO};
 use crate::models::user::UserModel;
 use crate::routes::ui;
 
@@ -78,16 +80,25 @@ async fn rocket() -> _ {
     warn!("warn");
     error!("error");
 
-    // TODO: move to own fn
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(std::env::var("DATABASE_URL").unwrap().as_str())
-        .await
-        .unwrap();
-
-    migrate!("./migrations")
-        .run(&pool)
-        .await.unwrap();
+    let settings: AppConfig = get_settings();
+    info!("Auth | Registration={} Login={} | OIDC={} CreateAccount={}",
+        if settings.auth.disable_registration { "N" } else { "Y" },
+        settings.auth.oidc.as_ref().map(|oidc| if oidc.disable_normal_login { "N" } else { "Y" } ).unwrap_or("Y"),
+        settings.auth.oidc.as_ref().map(|oidc| if oidc.enabled { "Y" } else { "N" } ).unwrap_or("N"),
+        settings.auth.oidc.as_ref().map(|oidc| if oidc.create_account { "Y" } else { "N" }).unwrap_or("-"),
+    );
+    let listen_ip: IpAddr = settings.general.listen_ip.as_ref()
+        .map(|s| s.to_string())
+        .unwrap_or_else(||"0.0.0.0".to_string())
+        .parse().expect("bad listen ip");
+    let listen_addr = SocketAddr::new(listen_ip, settings.general.listen_port.unwrap_or(8080));
+    info!("Listening on {} | Public URL: {}", listen_addr, settings.general.public_url);
+    if let Some(ref smtp) = settings.smtp {
+        if smtp.enabled {
+            info!("SMTP Enabled");
+        }
+    }
+    let pool = setup_db().await;
 
     let repo_manager = {
         let mut manager = RepoManager::new(pool.clone());
@@ -100,32 +111,21 @@ async fn rocket() -> _ {
     };
 
     // TODO: move to own func
-    let memory_store: MemoryStore::<SessionData> = MemoryStore::default();
-    let store: SessionStore<SessionData> = SessionStore {
-        store: Box::new(memory_store),
-        name: SESSION_COOKIE_NAME.into(),
-        duration: Duration::from_secs(SESSION_LIFETIME_SECONDS),
-        // The cookie builder is used to set the cookie's path and other options.
-        // Name and value don't matter, they'll be overridden on each request.
-        cookie_builder: CookieBuilder::new("", "")
-            // Most web apps will want to use "/", but if your app is served from
-            // `example.com/myapp/` for example you may want to use "/myapp/" (note the trailing
-            // slash which prevents the cookie from being sent for `example.com/myapp2/`).
-            .path("/")
+    let store = setup_session_store();
+    let sso: SSOState = {
+        if settings.auth.oidc.is_some() { Some(Arc::new(Mutex::new(SSO::create(&settings).await)) ) } else { None }
     };
 
-    // TODO: move to constants
-    let metadata = GlobalMetadata {
-        app_name: env!("CARGO_PKG_NAME").to_string(),
-        app_version: env!("CARGO_PKG_VERSION").to_string(),
-        repo_url: env!("CARGO_PKG_REPOSITORY").to_string(),
-    };
+    let figment = rocket::Config::figment()
+        .merge(("port", listen_addr.port()))
+        .merge(("address", listen_addr.ip()));
 
-    rocket::build()
+    rocket::custom(figment)
         .manage(pool)
         .manage(repo_manager)
         .manage(libraries_manager)
-        .manage(metadata)
+        .manage(settings)
+        .manage(sso)
 
         .attach(store.fairing())
         .attach(Template::custom(|engines| {

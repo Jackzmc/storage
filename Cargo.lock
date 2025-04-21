@@ -3284,6 +3284,7 @@ dependencies = [
  "bcrypt",
  "chrono",
  "dotenvy",
+ "figment",
  "humanize-bytes",
  "int-enum",
  "log",

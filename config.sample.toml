@@ -1,25 +1,41 @@
 [general]
 listen_ip = "0.0.0.0"
-listen_port = 80
-# if under reverse proxy
+listen_port = 8080
+
+# The public facing url, this is where users will access the app
+# Used for OIDC callbacks
+# - if under reverse proxy (nginx, traefik, caddy, etc):
 #public_url = "https://storage.example.com"
-#public_port = 443
 public_url = "http://localhost:8080"
-public_port = 80
 
 [backends.local]
 path = "/var/tmp/test"
 
 [auth]
-enable_registration = true
-oidc_enabled = true
-# Where the .well-known/openid-configuration exists
-oidc_issuer_url = "https://accounts.example.com"
-oidc_client_id = ""
-oidc_client_secret = ""
-oidc_claims = []
+# Is account registration disabled? Users will not be able to create
+# a new account with email/username + pass
+disable_registration = false
+[auth.oidc]
+enabled = true
+# The url the .well-known/openid-configuration exists, this can be a subpath
+# Example, for authentik: https://sso.example.com/application/o/YOURAPPSLUG
+issuer_url = ""
+client_id = ""
+client_secret = ""
+claims = ["email", "profile"]
 # Should an account be created if SSO user id doesn't exist already
-oidc_create_account = true
+create_account = true
+# Should normal login (username/email+pass) be disabled, forcing users to use sso?
+disable_normal_login = false
 
 [smtp]
-# TODO: 
+enabled = false
+hostname = "smtp.example.com"
+port = 587
+username = ""
+password = ""
+# Name to be used for emails, defaults to public_url's domain
+#from_name = ""
+# The email address to send as, defaults to username
+#from_address = ""
+tls = "none" # "none", "starttls" or "tls"
