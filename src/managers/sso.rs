@@ -3,7 +3,7 @@ use std::net::IpAddr;
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 use anyhow::anyhow;
-use log::warn;
+use log::{info, warn};
 use moka::future::Cache;
 use openidconnect::core::{CoreAuthDisplay, CoreAuthPrompt, CoreClaimName, CoreClient, CoreErrorResponseType, CoreGenderClaim, CoreJsonWebKey, CoreJweContentEncryptionAlgorithm, CoreProviderMetadata, CoreRevocableToken, CoreRevocationErrorResponse, CoreTokenIntrospectionResponse, CoreTokenResponse};
 use openidconnect::http::{HeaderMap, HeaderValue};
@@ -40,7 +40,8 @@ impl SSO {
     pub async fn create(config: &AppConfig) -> Self {
         let oidc_config = config.auth.oidc.as_ref().expect("OIDC config not provided");
         let referer = config.general.get_public_url().domain().map(|s| s.to_string());
-        let http_client = SSO::setup_http_client(referer, None);
+        let proxy_settings = SSO::setup_proxy();
+        let http_client = SSO::setup_http_client(referer, proxy_settings);
         let issuer_url = IssuerUrl::new(oidc_config.issuer_url.to_string()).expect("bad issuer url");
         let client_id = ClientId::new(oidc_config.client_id.to_string());
         let client_secret = Some(ClientSecret::new(oidc_config.client_secret.to_string()));
@@ -63,6 +64,16 @@ impl SSO {
             .build()
     }
 
+    fn setup_proxy() -> Option<HttpProxySettings> {
+        if let Ok(proxy_url) = var("DEV_PROXY_URL") {
+            return Some(HttpProxySettings {
+                url: proxy_url,
+                disable_cert_check: var("DEV_PROXY_DANGER_DISABLE_CERT_CHECK").is_ok()
+            })
+        }
+        None
+    }
+
     fn setup_http_client(referer: Option<String>, proxy_settings: Option<HttpProxySettings>) -> reqwest::Client {
         let mut headers = HeaderMap::new();
         // TODO: pull from config.
@@ -75,7 +86,10 @@ impl SSO {
             .redirect(reqwest::redirect::Policy::none())
             .default_headers(headers);
         if let Some(proxy) = proxy_settings {
-            warn!("DANGER_DEV_PROXY set, requests are being proxied & ignoring certificates");
+            info!("Using proxy url: {}", proxy.url);
+            if proxy.disable_cert_check {
+                warn!("!! DEV_PROXY_DANGER_DISABLE_CERT_CHECK is set: requests are proxied, ignoring certificates");
+            }
             builder = builder
                 .proxy(reqwest::Proxy::https(proxy.url).unwrap())
                 .danger_accept_invalid_certs(proxy.disable_cert_check);

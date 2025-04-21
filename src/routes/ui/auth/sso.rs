@@ -105,6 +105,7 @@ pub async fn callback(session: Session<'_, SessionData>, ip: IpAddr, sso: &State
                 error: e.to_string()
             })))?;
     debug!("user={:?}\nemail={:?}\nname={:?}", userinfo.subject(), userinfo.email(), userinfo.name());
+    // TODO: rest of user login, map to existing user / create user, etc blah blah
     let return_to = return_to.unwrap_or("/".to_string());
     Ok(HackyRedirectBecauseRocketBug {
         inner: "Login successful, redirecting...".to_string(),
