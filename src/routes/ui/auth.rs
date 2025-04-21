@@ -9,7 +9,7 @@ use rocket::http::uri::{Origin, Reference, Uri};
 use rocket::response::Redirect;
 use rocket_dyn_templates::{context, Template};
 use rocket_session_store::Session;
-use crate::models::user::{validate_user, validate_user_form, UserAuthError, UserModel};
+use crate::models::user::{validate_user, try_login_user_form, UserAuthError, UserModel};
 use crate::{GlobalMetadata, LoginSessionData, SessionData, DB};
 use crate::guards::AuthUser;
 use crate::routes::ui;

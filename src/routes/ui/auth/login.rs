@@ -8,7 +8,8 @@ use rocket_session_store::Session;
 use crate::{GlobalMetadata, LoginSessionData, SessionData, DB};
 use crate::config::AppConfig;
 use crate::consts::{APP_METADATA, DISABLE_LOGIN_CHECK};
-use crate::models::user::validate_user_form;
+use crate::managers::user::UsersState;
+use crate::models::user::try_login_user_form;
 use crate::routes::ui::auth::HackyRedirectBecauseRocketBug;
 use crate::util::{set_csrf, validate_csrf_form};
 
@@ -19,6 +20,7 @@ pub async fn page(
     return_to: Option<String>,
     logged_out: Option<bool>,
     settings: &State<AppConfig>,
+
 ) -> Template {
     // TODO: redirect if already logged in
     let csrf_token = set_csrf(&session).await;
@@ -48,29 +50,21 @@ struct LoginForm<'r> {
 
 #[post("/auth/login?<return_to>", data = "<form>")]
 pub async fn handler(
-    pool: &State<DB>,
     route: &Route,
     ip_addr: IpAddr,
     session: Session<'_, SessionData>,
     mut form: Form<Contextual<'_, LoginForm<'_>>>,
+    users: &State<UsersState>,
     settings: &State<AppConfig>,
     return_to: Option<String>,
 ) -> Result<HackyRedirectBecauseRocketBug, Template> {
     trace!("handler");
-    if !*DISABLE_LOGIN_CHECK {
-        validate_csrf_form(&mut form.context, &session).await;
-    }
-    let user = validate_user_form(&mut form.context, &pool).await;
+    validate_csrf_form(&mut form.context, &session).await;
+    let user = try_login_user_form(&mut form.context, users.inner(), ip_addr, &session).await.ok();
+    // TODO: use new users fetch user
     trace!("check form");
     if form.context.status() == Status::Ok {
-        if let Some(submission) = &form.value {
-            session.set(SessionData {
-                csrf_token: None,
-                login: Some(LoginSessionData {
-                    user: user.expect("failed to acquire user but no errors"), // if validate_user_form returned None, form had errors, this shouldnt run,
-                    ip_address: ip_addr,
-                }),
-            }).await.unwrap();
+        if let Some(_) = &form.value {
             let mut return_to_path = return_to.unwrap_or("/".to_string());
             if return_to_path == "" { return_to_path.push_str("/"); }
             debug!("returning user to {:?}", return_to_path);

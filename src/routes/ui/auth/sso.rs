@@ -101,7 +101,7 @@ async fn callback_handler(sso: &State<SSOState>, ip: IpAddr, code: String, state
 }
 
 #[get("/auth/sso/cb?<code>&<state>")]
-pub async fn callback(sessions: Session<'_, SessionData>, config: &State<AppConfig>, users: &State<UsersState>, ip: IpAddr, sso: &State<SSOState>, code: String, state: String) -> Result<HackyRedirectBecauseRocketBug, (Status, Template)> {
+pub async fn callback(session: Session<'_, SessionData>, config: &State<AppConfig>, users: &State<UsersState>, ip: IpAddr, sso: &State<SSOState>, code: String, state: String) -> Result<HackyRedirectBecauseRocketBug, (Status, Template)> {
     let (userinfo, provider_id, return_to) = callback_handler(sso, ip, code, state).await
         .map_err(|e| (Status::InternalServerError, Template::render("errors/500", context! {
                 error: e.to_string()
@@ -141,7 +141,7 @@ pub async fn callback(sessions: Session<'_, SessionData>, config: &State<AppConf
         }
     }
     let user = user.unwrap();
-    users.login_user(user, ip, sessions).await;
+    users.login_user_session(user, ip, &session).await;
     debug!("user={:?}\nemail={:?}\nname={:?}", userinfo.subject(), userinfo.email(), userinfo.name());
     // TODO: login user to session, prob through UserManager/users
     let return_to = return_to.unwrap_or("/".to_string());

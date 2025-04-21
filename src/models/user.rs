@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::net::IpAddr;
 use bcrypt::BcryptError;
 use chrono::NaiveDateTime;
 use rocket::form::Context;
@@ -9,9 +10,11 @@ use rocket::form::error::Entity;
 use rocket::response::Responder;
 use rocket::serde::Serialize;
 use rocket::serde::uuid::Uuid;
+use rocket_session_store::Session;
 use sqlx::{query_as, FromRow};
 use crate::consts::{DISABLE_LOGIN_CHECK, ENCRYPTION_ROUNDS};
 use crate::{LoginSessionData, SessionData, DB};
+use crate::managers::user::UsersState;
 use crate::models::repo::RepoModel;
 use crate::util::JsonErrorResponse;
 
@@ -95,22 +98,11 @@ pub async fn get_user(pool: &DB, user_id: &str) -> Result<Option<UserModel>, any
         .fetch_optional(pool)
         .await.map_err(anyhow::Error::from)
 }
-/// Validates user login form, returning Some on success or None (with ctx containing errors) on failure
-pub async fn validate_user_form(ctx: &mut Context<'_>, pool: &DB) -> Option<UserModel> {
+/// Validates user login form
+pub async fn try_login_user_form(ctx: &mut Context<'_>, users: &UsersState, ip: IpAddr, session: &Session<'_, SessionData>) -> Result<UserModel, UserAuthError> {
     let username = ctx.field_value("username").unwrap();
     let password = ctx.field_value("password").unwrap(); // TODO: no unwrap
-    match validate_user(pool, username, password).await {
-        Ok(u) => Some(u),
-        Err(UserAuthError::PasswordInvalid | UserAuthError::UserNotFound) => {
-            ctx.push_error(form::Error::validation("Username or password is incorrect").with_entity(Entity::Form));
-            None
-        },
-        Err(e) => {
-            ctx.push_error(form::Error::custom(e));
-            None
-        }
-    }
-
+    users.login_normal_user(username, password, ip, session).await
 }
 pub async fn validate_user(pool: &DB, email_or_usrname: &str, password: &str) -> Result<UserModel, UserAuthError> {
     let user = query_as!(UserModelWithPassword,

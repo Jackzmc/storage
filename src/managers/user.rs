@@ -10,9 +10,9 @@ use rocket_session_store::memory::MemoryStore;
 use sqlx::{query, query_as, Pool, QueryBuilder};
 use uuid::Uuid;
 use crate::config::AppConfig;
-use crate::consts::ENCRYPTION_ROUNDS;
+use crate::consts::{DISABLE_LOGIN_CHECK, ENCRYPTION_ROUNDS};
 use crate::{LoginSessionData, SessionData, DB};
-use crate::models::user::{UserAuthError, UserModel};
+use crate::models::user::{UserAuthError, UserModel, UserModelWithPassword};
 
 pub struct UserManager {
     pool: DB,
@@ -36,7 +36,7 @@ pub enum FindUserOption {
 
 #[derive(Hash)]
 pub struct SSOData {
-    pub provider_id: String,
+    pub(crate) provider_id: String,
     pub(crate) sub: String
 }
 
@@ -111,7 +111,7 @@ impl UserManager {
         })
     }
 
-    pub async fn login_user(&self, user: UserModel, ip_address: IpAddr, sessions: Session<'_, SessionData>) {
+    pub async fn login_user_session(&self, user: UserModel, ip_address: IpAddr, sessions: &Session<'_, SessionData>) {
         sessions.set(SessionData {
             csrf_token: None,
             login: Some(LoginSessionData {
@@ -119,5 +119,31 @@ impl UserManager {
                 ip_address
             }),
         }).await.unwrap();
+    }
+
+    pub async fn login_normal_user(&self, email_or_usrname: &str, password: &str, ip: IpAddr, session: &Session<'_, SessionData>) -> Result<UserModel, UserAuthError> {
+        let user = query_as!(UserModelWithPassword,
+        "select id, username, password, created_at, email, name  from storage.users where email = $1 OR username = $1", email_or_usrname
+    )
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| UserAuthError::DatabaseError(e))?;
+        let Some(user) = user else {
+            return Err(UserAuthError::UserNotFound);
+        };
+        if let Some(db_password) = user.password {
+            if !*DISABLE_LOGIN_CHECK || bcrypt::verify(password, &db_password).map_err(|e| UserAuthError::EncryptionError(e))? {
+                let model = UserModel {
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    created_at: user.created_at,
+                    name: user.name
+                };
+                self.login_user_session(model.clone(), ip, session).await;
+                return Ok(model)
+            }
+        }
+        Err(UserAuthError::PasswordInvalid)
     }
 }
