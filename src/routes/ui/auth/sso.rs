@@ -101,7 +101,7 @@ async fn callback_handler(sso: &State<SSOState>, ip: IpAddr, code: String, state
 }
 
 #[get("/auth/sso/cb?<code>&<state>")]
-pub async fn callback(config: &State<AppConfig>, users: &State<UsersState>, ip: IpAddr, sso: &State<SSOState>, code: String, state: String) -> Result<HackyRedirectBecauseRocketBug, (Status, Template)> {
+pub async fn callback(sessions: Session<'_, SessionData>, config: &State<AppConfig>, users: &State<UsersState>, ip: IpAddr, sso: &State<SSOState>, code: String, state: String) -> Result<HackyRedirectBecauseRocketBug, (Status, Template)> {
     let (userinfo, provider_id, return_to) = callback_handler(sso, ip, code, state).await
         .map_err(|e| (Status::InternalServerError, Template::render("errors/500", context! {
                 error: e.to_string()
@@ -120,7 +120,7 @@ pub async fn callback(config: &State<AppConfig>, users: &State<UsersState>, ip: 
         error: "Provider did not provide an username"
     })))?.to_string();
     let search_options = vec![FindUserOption::Id(uid.clone()), FindUserOption::Email(email.clone()), FindUserOption::Username(username.clone())];
-    let user = users.fetch_user(&search_options).await.map_err(|e|(Status::InternalServerError, Template::render("errors/500", context! {
+    let mut user = users.fetch_user(&search_options).await.map_err(|e|(Status::InternalServerError, Template::render("errors/500", context! {
         error: format!("Failed to find user: {}", e)
     })))?;
     debug!("existing user = {:?}", user);
@@ -130,13 +130,18 @@ pub async fn callback(config: &State<AppConfig>, users: &State<UsersState>, ip: 
                 error: "No account found linked to oidc provider and account creation has been disabled"
             })));
         }
-        let id = users.create_sso_user(CreateUserOptions {
-            email,
-            username,
-            name: userinfo.name().unwrap().get(None).map(|s| s.to_string()),
-        }, uid).await.expect("later i fix");
-        debug!("new user = {}", id);
+        user = {
+            let u = users.create_sso_user(CreateUserOptions {
+                email,
+                username,
+                name: userinfo.name().unwrap().get(None).map(|s| s.to_string()),
+            }, uid).await.expect("later i fix");
+            debug!("new user = {}", u.id);
+            Some(u)
+        }
     }
+    let user = user.unwrap();
+    users.login_user(user, ip, sessions).await;
     debug!("user={:?}\nemail={:?}\nname={:?}", userinfo.subject(), userinfo.email(), userinfo.name());
     // TODO: login user to session, prob through UserManager/users
     let return_to = return_to.unwrap_or("/".to_string());

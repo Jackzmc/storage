@@ -1,4 +1,5 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::net::IpAddr;
 use std::sync::Arc;
 use anyhow::anyhow;
 use rocket::futures::TryStreamExt;
@@ -10,7 +11,7 @@ use sqlx::{query, query_as, Pool, QueryBuilder};
 use uuid::Uuid;
 use crate::config::AppConfig;
 use crate::consts::ENCRYPTION_ROUNDS;
-use crate::{SessionData, DB};
+use crate::{LoginSessionData, SessionData, DB};
 use crate::models::user::{UserAuthError, UserModel};
 
 pub struct UserManager {
@@ -80,17 +81,17 @@ impl UserManager {
                 .map_err(|e| anyhow!(e))
     }
     /// Returns user's id
-    pub async fn create_normal_user(&self, user: CreateUserOptions, plain_password: String) -> Result<String, anyhow::Error> {
+    pub async fn create_normal_user(&self, user: CreateUserOptions, plain_password: String) -> Result<UserModel, anyhow::Error> {
         let password = bcrypt::hash(plain_password, ENCRYPTION_ROUNDS)
             .map_err(|e| anyhow!(e))?;
         let id = Self::generate_id(None);
         self.create_user(id, user, Some(password)).await
     }
     /// Returns user's id
-    pub async fn create_sso_user(&self, user: CreateUserOptions, id: String) -> Result<String, anyhow::Error> {
+    pub async fn create_sso_user(&self, user: CreateUserOptions, id: String) -> Result<UserModel, anyhow::Error> {
         self.create_user(id, user, None).await
     }
-    async fn create_user(&self, id: String, user: CreateUserOptions, encrypted_password: Option<String>) -> Result<String, anyhow::Error> {
+    async fn create_user(&self, id: String, user: CreateUserOptions, encrypted_password: Option<String>) -> Result<UserModel, anyhow::Error> {
         query!(
             "INSERT INTO storage.users (id, name, password, email, username) VALUES ($1, $2, $3, $4, $5)",
             id,
@@ -101,6 +102,22 @@ impl UserManager {
         )
             .execute(&self.pool)
             .await?;
-        Ok(id)
+        Ok(UserModel {
+            id,
+            username: user.username,
+            email: user.email,
+            created_at: Default::default(),
+            name: user.name,
+        })
+    }
+
+    pub async fn login_user(&self, user: UserModel, ip_address: IpAddr, sessions: Session<'_, SessionData>) {
+        sessions.set(SessionData {
+            csrf_token: None,
+            login: Some(LoginSessionData {
+                user,
+                ip_address
+            }),
+        }).await.unwrap();
     }
 }
