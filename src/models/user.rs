@@ -17,20 +17,20 @@ use crate::util::JsonErrorResponse;
 
 #[derive(Serialize, Clone, Debug, FromRow)]
 pub struct UserModel {
-    pub id: Uuid,
+    pub id: String,
     pub username: String,
     pub email: String,
     pub created_at: NaiveDateTime,
-    pub name: String
+    pub name: Option<String>
 }
 #[derive(Serialize, Clone, Debug, FromRow)]
 pub struct UserModelWithPassword {
-    pub id: Uuid,
+    pub id: String,
     pub username: String,
     pub email: String,
     pub password: Option<String>,
     pub created_at: NaiveDateTime,
-    pub name: String
+    pub name: Option<String>
 }
 
 #[derive(Debug)]
@@ -91,7 +91,6 @@ impl UserAuthError {
 
 
 pub async fn get_user(pool: &DB, user_id: &str) -> Result<Option<UserModel>, anyhow::Error> {
-    let user_id = Uuid::parse_str(user_id)?;
     query_as!(UserModel, "select id, username, created_at, email, name from storage.users where id = $1", user_id)
         .fetch_optional(pool)
         .await.map_err(anyhow::Error::from)
@@ -135,16 +134,4 @@ pub async fn validate_user(pool: &DB, email_or_usrname: &str, password: &str) ->
         }
     }
     Err(UserAuthError::PasswordInvalid)
-}
-
-pub struct CreateUserModel {
-    pub username: String,
-    pub email: String,
-    pub password: String,
-    pub name: String
-}
-pub async fn create_user(pool: &DB, user: CreateUserModel) -> Result<UserModel, UserAuthError> {
-    let encrypted_pass = bcrypt::hash(user.password, ENCRYPTION_ROUNDS)
-        .map_err(|e| UserAuthError::EncryptionError(e))?;
-    todo!()
 }

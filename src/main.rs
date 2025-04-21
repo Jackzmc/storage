@@ -27,6 +27,7 @@ use routes::api;
 use crate::config::{get_settings, AppConfig};
 use crate::consts::{init_statics, SESSION_COOKIE_NAME, SESSION_LIFETIME_SECONDS};
 use crate::managers::sso::{SSOState, SSO};
+use crate::managers::user::UsersState;
 use crate::models::user::UserModel;
 use crate::routes::ui;
 
@@ -114,6 +115,10 @@ async fn rocket() -> _ {
     let store = setup_session_store();
     let sso: SSOState = {
         if settings.auth.oidc.is_some() { Some(Arc::new(Mutex::new(SSO::create(&settings).await)) ) } else { None }
+    };
+    let users: UsersState = {
+        // TODO: somehow need to get store
+        UsersState::new(pool.clone())
     };
 
     let figment = rocket::Config::figment()

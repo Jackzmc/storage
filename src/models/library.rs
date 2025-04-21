@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use anyhow::anyhow;
 use chrono::NaiveDateTime;
 use rocket::serde::{Serialize, Deserialize};
@@ -13,7 +14,7 @@ use crate::user::User;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LibraryModel {
     pub id: Uuid,
-    pub owner_id: Uuid,
+    pub owner_id: String,
     pub repo_id: String,
     pub created_at: NaiveDateTime,
     pub name: String,
@@ -26,7 +27,7 @@ pub struct LibraryWithRepoModel {
 }
 
 pub async fn get_library(pool: &DB, library_id: &str) -> Result<Option<LibraryModel>, anyhow::Error> {
-    let library_id = Uuid::parse_str(library_id)?;
+    let library_id = Uuid::from_str(library_id)?;
     let library = query_as!(LibraryModel, "select * from storage.libraries where id = $1", library_id)
         .fetch_optional(pool)
         .await.map_err(anyhow::Error::from)?;

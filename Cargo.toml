@@ -20,7 +20,7 @@ dotenvy = "0.15.7"
 rocket_dyn_templates = { version = "0.2.0", features = ["handlebars"] }
 humanize-bytes = "1.0.6"
 rocket-session-store = "0.2.1"
-uuid = { version = "1.16.0", features = ["v4"] }
+uuid = { version = "1.16.0", features = ["v4", "v5"] }
 rand = { version = "0.9.0", features = ["thread_rng"] }
 bcrypt = "0.17.0"
 openidconnect = "4.0.0"

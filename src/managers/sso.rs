@@ -125,6 +125,10 @@ impl SSO {
         self.scopes.iter().map(|c| Scope::new(c.to_string())).collect()
     }
 
+    pub fn provider_id(&self) -> String {
+        self.issuer_url.url().domain().expect("issuer has no domain").to_string()
+    }
+
     pub async fn cache_set(&mut self, ip: IpAddr, data: SSOSessionData) {
         self.cache.insert(ip, data).await;
     }

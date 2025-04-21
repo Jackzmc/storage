@@ -17,7 +17,9 @@ use reqwest::header::HeaderMap;
 use rocket::http::{Header, Status};
 use rocket_dyn_templates::{context, Template};
 use tokio::sync::MutexGuard;
+use crate::config::AppConfig;
 use crate::managers::sso::{SSOSessionData, SSOState, SSO};
+use crate::managers::user::{CreateUserOptions, FindUserOption, SSOData, UserManager, UsersState};
 use crate::routes::ui::auth::HackyRedirectBecauseRocketBug;
 
 async fn page_handler(sso: &State<SSOState>, ip: IpAddr, return_to: Option<String>) -> Result<Redirect, anyhow::Error> {
@@ -51,7 +53,7 @@ pub async fn page(ip: IpAddr, sso: &State<SSOState>, return_to: Option<String>) 
             })))
 }
 
-async fn callback_handler(sso: &State<SSOState>, ip: IpAddr, code: String, state: String) -> Result<(CoreUserInfoClaims, Option<String>), anyhow::Error> {
+async fn callback_handler(sso: &State<SSOState>, ip: IpAddr, code: String, state: String) -> Result<(CoreUserInfoClaims, String, Option<String>), anyhow::Error> {
     let mut sso = sso.as_ref().ok_or_else(||anyhow!("SSO is not configured"))?.lock().await;
     let sess_data = sso.cache_take(ip).await.ok_or_else(|| anyhow!("No valid sso started"))?;
     if &state != sess_data.csrf_token.secret() {
@@ -95,17 +97,48 @@ async fn callback_handler(sso: &State<SSOState>, ip: IpAddr, code: String, state
         .request_async(sso.http_client())
         .await
         .map_err(|_| anyhow!("could not acquire user data"))?;
-    Ok((userinfo, sess_data.return_to))
+    Ok((userinfo, sso.provider_id(), sess_data.return_to))
 }
 
 #[get("/auth/sso/cb?<code>&<state>")]
-pub async fn callback(session: Session<'_, SessionData>, ip: IpAddr, sso: &State<SSOState>, code: String, state: String) -> Result<HackyRedirectBecauseRocketBug, (Status, Template)> {
-    let (userinfo, return_to) = callback_handler(sso, ip, code, state).await
+pub async fn callback(config: &State<AppConfig>, users: &State<UsersState>, ip: IpAddr, sso: &State<SSOState>, code: String, state: String) -> Result<HackyRedirectBecauseRocketBug, (Status, Template)> {
+    let (userinfo, provider_id, return_to) = callback_handler(sso, ip, code, state).await
         .map_err(|e| (Status::InternalServerError, Template::render("errors/500", context! {
                 error: e.to_string()
             })))?;
+    // Setup search for existing users:
+    // TODO: own method?
+    let sso_data = SSOData {
+        provider_id,
+        sub: userinfo.subject().to_string()
+    };
+    let uid = UserManager::generate_id(Some(sso_data));
+    let email = userinfo.email().ok_or_else(||(Status::InternalServerError, Template::render("errors/500", context! {
+        error: "Provider did not provide an email"
+    })))?.to_string();
+    let username = userinfo.preferred_username().ok_or_else(||(Status::InternalServerError, Template::render("errors/500", context! {
+        error: "Provider did not provide an username"
+    })))?.to_string();
+    let search_options = vec![FindUserOption::Id(uid.clone()), FindUserOption::Email(email.clone()), FindUserOption::Username(username.clone())];
+    let user = users.fetch_user(&search_options).await.map_err(|e|(Status::InternalServerError, Template::render("errors/500", context! {
+        error: format!("Failed to find user: {}", e)
+    })))?;
+    debug!("existing user = {:?}", user);
+    if user.is_none() {
+        if config.auth.oidc.as_ref().unwrap().create_account {
+            return Err((Status::InternalServerError, Template::render("errors/403", context! {
+                error: "No account found linked to oidc provider and account creation has been disabled"
+            })));
+        }
+        let id = users.create_sso_user(CreateUserOptions {
+            email,
+            username,
+            name: userinfo.name().unwrap().get(None).map(|s| s.to_string()),
+        }, uid).await.expect("later i fix");
+        debug!("new user = {}", id);
+    }
     debug!("user={:?}\nemail={:?}\nname={:?}", userinfo.subject(), userinfo.email(), userinfo.name());
-    // TODO: rest of user login, map to existing user / create user, etc blah blah
+    // TODO: login user to session, prob through UserManager/users
     let return_to = return_to.unwrap_or("/".to_string());
     Ok(HackyRedirectBecauseRocketBug {
         inner: "Login successful, redirecting...".to_string(),

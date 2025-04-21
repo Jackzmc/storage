@@ -26,6 +26,7 @@ claims = ["email", "profile"]
 # Should an account be created if SSO user id doesn't exist already
 create_account = true
 # Should normal login (username/email+pass) be disabled, forcing users to use sso?
+# If enabled and disable_registration is enabled, the login page will redirect to SSO page directly
 disable_normal_login = false
 
 [smtp]
