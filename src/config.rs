@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::env::var;
 use figment::Figment;
 use figment::providers::{Env, Format, Toml};
-use log::error;
+use log::{debug, error};
 use openidconnect::core::{CoreClient, CoreProviderMetadata};
 use openidconnect::IssuerUrl;
 use openidconnect::url::Url;
@@ -53,6 +53,12 @@ impl GeneralConfig {
 pub struct AuthConfig {
     pub disable_registration: bool,
     pub oidc: Option<OidcConfig>,
+}
+
+impl AuthConfig {
+    pub fn oidc_enabled(&self) -> bool {
+        self.oidc.as_ref().map(|o| o.enabled).unwrap_or(false)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

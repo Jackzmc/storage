@@ -33,7 +33,12 @@ _The current files list when logged in_
 git clone https://github.com/jackzmc/storage.git
 cd storage
 
-# Configure your database (create .env file with your PostgreSQL connection)
+# Copy the sample config
+cp config.sample.toml config.toml
+# Edit the config.toml or provide the equivalant settings with env
+# ex: [auth.oidc]  ---> STORAGE_auth.oidc.issuer__url
+#     issuer-url
+# Configure your database (requires to be set by env for now)
 echo "DATABASE_URL=postgres://username:password@localhost" > .env
 
 # Build the project
@@ -52,12 +57,18 @@ Rough roadmap in a rough order of priority
 
 * [ ] WebDAV Support
 * [ ] Email support (for password resets, user invites)
+  * [ ] Email sender utility
+  * [ ] Individual email actions
 * [ ] SSO Support (openid)
+  * [x] Basic implementation
+  * [ ] User mapping
+  * [ ] User creation
+  * [ ] User logout
+* [ ] S3 backend support
 * [ ] Administration panel
   * [ ] Add storage backends
   * [ ] Manage users
   * [ ] Change app settings
-* [ ] S3 backend support
   
 ## Documentation
 

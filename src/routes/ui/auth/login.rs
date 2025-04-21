@@ -6,6 +6,7 @@ use rocket::http::{Header, Status};
 use rocket_dyn_templates::{context, Template};
 use rocket_session_store::Session;
 use crate::{GlobalMetadata, LoginSessionData, SessionData, DB};
+use crate::config::AppConfig;
 use crate::consts::{APP_METADATA, DISABLE_LOGIN_CHECK};
 use crate::models::user::validate_user_form;
 use crate::routes::ui::auth::HackyRedirectBecauseRocketBug;
@@ -16,7 +17,8 @@ pub async fn page(
     route: &Route,
     session: Session<'_, SessionData>,
     return_to: Option<String>,
-    logged_out: Option<bool>
+    logged_out: Option<bool>,
+    settings: &State<AppConfig>,
 ) -> Template {
     // TODO: redirect if already logged in
     let csrf_token = set_csrf(&session).await;
@@ -26,7 +28,8 @@ pub async fn page(
         form: &Context::default(),
         return_to,
         logged_out,
-        meta: APP_METADATA.clone()
+        meta: APP_METADATA.clone(),
+        sso_enabled: settings.auth.oidc_enabled()
     })
 }
 
@@ -50,6 +53,7 @@ pub async fn handler(
     ip_addr: IpAddr,
     session: Session<'_, SessionData>,
     mut form: Form<Contextual<'_, LoginForm<'_>>>,
+    settings: &State<AppConfig>,
     return_to: Option<String>,
 ) -> Result<HackyRedirectBecauseRocketBug, Template> {
     trace!("handler");
@@ -87,7 +91,8 @@ pub async fn handler(
         csrf_token: csrf_token,
         form: &form.context,
         return_to,
-        meta: APP_METADATA.clone()
+        meta: APP_METADATA.clone(),
+        sso_enabled: settings.auth.oidc_enabled()
     };
     Err(Template::render("auth/login", &ctx))
 }
