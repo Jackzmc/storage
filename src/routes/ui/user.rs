@@ -17,6 +17,7 @@ use tokio::sync::Mutex;
 use crate::consts::FILE_CONSTANTS;
 use crate::guards::{AuthUser};
 use crate::managers::libraries::LibraryManager;
+use crate::managers::user::UsersState;
 use crate::objs::library::ListOptions;
 use crate::routes::ui::auth;
 use crate::util::{JsonErrorResponse, ResponseError};
@@ -26,8 +27,10 @@ pub async fn user_settings(user: AuthUser, route: &Route) -> Template {
     Template::render("settings", context! { session: user.session, route: route.uri.path() })
 }
 #[get("/")]
-pub async fn index(user: AuthUser, route: &Route) -> Template {
-    Template::render("index", context! { session: user.session, route: route.uri.path(), test: "value" })
+pub async fn index(user: AuthUser, libraries: &State<Arc<Mutex<LibraryManager>>>, route: &Route) -> Template {
+    let libraries = libraries.lock().await;
+    let list = libraries.list(&user.session.user.id).await.unwrap();
+    Template::render("index", context! { session: user.session, libraries: list, route: route.uri.path(), test: "value" })
 }
 
 #[get("/library/<library_id>")]

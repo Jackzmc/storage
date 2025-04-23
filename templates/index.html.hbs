@@ -16,20 +16,20 @@
             <thead>
                 <tr>
                     <td>Name </td>
-                    <td>Size </td>
-                    <td>Last Updated </td>
+                    <td>Created </td>
                     <td>Owner </td>
                 </tr>
             </thead>
             <tbody>
+                {{#each libraries}}
                 <tr>
                     <td class="px-4 py-4">
-                        <a href="/library/dbabbf7d-9b63-487b-9908-57c2df11b2d2/My Library/">My Library</a>
+                        <a href="/library/{{id}}/{{name}}/">{{name}}</a>
                     </td>
-                    <td></td>
-                    <td></td>
-                    <td>Me</td>
+                    <td>{{ created_at }}</td>
+                    <td>{{ owner_id }}</td>
                 </tr>
+                {{/each}}
             </tbody>
         </table>
     </div>

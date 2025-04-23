@@ -131,6 +131,7 @@ async fn rocket() -> _ {
         .manage(libraries_manager)
         .manage(settings)
         .manage(sso)
+        .manage(users)
 
         .attach(store.fairing())
         .attach(Template::custom(|engines| {

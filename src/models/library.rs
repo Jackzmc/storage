@@ -26,6 +26,12 @@ pub struct LibraryWithRepoModel {
     pub storage_type: String,
 }
 
+pub enum PermissionLevel {
+    ReadOnly = 0,
+    ReadWrite = 1,
+    Admin = 2
+}
+
 pub async fn get_library(pool: &DB, library_id: &str) -> Result<Option<LibraryModel>, anyhow::Error> {
     let library_id = Uuid::from_str(library_id)?;
     let library = query_as!(LibraryModel, "select * from storage.libraries where id = $1", library_id)
